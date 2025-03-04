@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QA Workflow App</title>
+</head>
+<body>
+    <h1>Chat Input</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        <textarea name="chat_input" placeholder="What is the document about?" rows="4" cols="50">{{ chat_input_text }}</textarea><br><br>
+        <button type="submit">Process</button>
+    </form>
+
+    <h2>Chat Output</h2>
+    <div style="border: 1px solid #ccc; padding: 10px; margin-top: 20px;">
+        {{ chat_output_text }}
+    </div>
+
+</body>
+</html>
