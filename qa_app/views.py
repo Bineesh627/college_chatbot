@@ -2,8 +2,9 @@ from django.shortcuts import render
 from django.http import HttpResponse
 import numpy as np 
 from langchain.prompts import ChatPromptTemplate
-from langchain_community.llms.ollama import Ollama
+from langchain_ollama import OllamaEmbeddings
 from data_processing.models import DocumentChunks
+from langchain_community.docstore.document import Document
 from data_processing.views import get_embedding_function
 
 def qa_workflow(request):
@@ -21,23 +22,11 @@ def qa_workflow(request):
     }
     return render(request, 'qa_app/qa_workflow.html', context)
 
-
-
-# PROMPT_TEMPLATE = """
-# Answer the question based only on the following context:
-
-# {context}
-
-# ---
-
-# Answer the question based on the above context: {question}
-# """
-
-def query_rag(query_text: str):
+def query_rag(query_text):
     # Get the embedding function
     embedding_model = get_embedding_function()
     # Generate embedding for the query
-    embedding_vector = embedding_model.embed_query(query_text)
+    query_embedding_vector = embedding_model.embed_query(query_text)
 
     # 3. Fetch all DocumentChunks from MongoDB (or filter if needed)
     document_chunks_queryset = DocumentChunks.objects.all() # Or apply filters here if necessary (e.g., based on crawled_url)
@@ -69,29 +58,12 @@ def query_rag(query_text: str):
     similarities.sort(key=lambda x: x[0], reverse=True)
 
     # 6. Get top k most similar chunks (e.g., top 3)
-    top_k = min(3, len(similarities)) # Adjust k as needed
+    top_k = min(5, len(similarities)) # Adjust k as needed
     top_chunks_with_scores = similarities[:top_k] # Get top chunks with their scores
     top_chunks = [chunk_obj for similarity_score, chunk_obj in top_chunks_with_scores] # Extract just the DocumentChunks objects
     top_documents = [documents_for_search[document_chunks.index(chunk)] for chunk in top_chunks] # Get corresponding Langchain Documents
+    print(top_documents)
 
     # 7. (Optional) You might want to return the similarity scores as well
     # For now, just return the top Document objects
     return top_documents # Or return top_chunks_with_scores if you need scores
-
-    # db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
-
-    # # Search the DB.
-    # results = db.similarity_search_with_score(query_text, k=5)
-
-    # context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
-    # prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-    # prompt = prompt_template.format(context=context_text, question=query_text)
-    # # print(prompt)
-
-    # model = Ollama(model="mistral")
-    # response_text = model.invoke(prompt)
-
-    # sources = [doc.metadata.get("id", None) for doc, _score in results]
-    # formatted_response = f"Response: {response_text}\nSources: {sources}"
-    # print(formatted_response)
-    # return response_text

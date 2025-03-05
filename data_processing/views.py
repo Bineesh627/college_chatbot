@@ -1,23 +1,81 @@
 from django.shortcuts import render
 from .models import CrawledURL, DocumentChunks
-from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_ollama import OllamaEmbeddings
 from langchain_community.docstore.document import Document
+import requests
+from bs4 import BeautifulSoup
 import json  # Import json module
 import re
 
 def data_source(request):
     return render(request, 'data_processing/data_source.html')
 
-# Clean Text
-def clean_text(text):
+def data_source(request):
+    return render(request, 'data_processing/data_source.html')
+
+def decode_email(encoded_email):
+    decoded = ''
+    hex_value = int(encoded_email[:2], 16)
+    for i in range(2, len(encoded_email), 2):
+        decoded += chr(int(encoded_email[i:i+2], 16) ^ hex_value)
+    return decoded
+
+def clean_and_extract_data(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Remove unwanted tags
+        for tag in soup(['header', 'footer', 'button', 'script']):
+            tag.decompose()
+        for tag in soup.find_all(class_=["bottom-sec", "bottom-sec1", "header"]):
+            tag.decompose()
+
+        # Extract body text
+        body_content = soup.body
+        if not body_content:
+            return None
+
+        body_text = body_content.get_text(separator=' ', strip=True)
+        cleaned_text = re.sub(r'\s+', ' ', body_text).strip()
+
+        # Decode and replace emails
+        email_elements = soup.find_all('a', class_='__cf_email__')
+        decoded_emails = []
+        for email_element in email_elements:
+            encoded_email = email_element['data-cfemail']
+            decoded_email = decode_email(encoded_email)
+            decoded_emails.append(decoded_email)
+
+            # Replace encoded emails in the text
+            cleaned_text = cleaned_text.replace(email_element.get_text(), decoded_email)
+
+        # Replace '[email protected]' with the first decoded email (if available)
+        if decoded_emails:
+            cleaned_text = cleaned_text.replace('[email protected]', decoded_emails[0])
+
+        # Return a list containing a Langchain Document object
+        return [Document(page_content=cleaned_text, metadata={"source": url})] # Correct return type
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching URL: {e}")
+        return None
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return None
+
+# Clean Text function (moved from WebBaseLoader example)
+def clean_text(text): # Define clean_text function here in views.py
     text = re.sub(r'\s+', ' ', text)
     text = re.sub(r'\[email\xa0protected\]', 'email-hidden', text)
     text = re.sub(r'Toggle navigation', '', text)
     return text.strip()
 
-def start_content():
+
+def start_content(request):
+    message = "" # Define message variable
 
     # Load URLs with status_code 200 directly and convert to Python list
     urls_queryset = CrawledURL.objects.filter(status_code=200).values_list('source_url', flat=True)
@@ -32,48 +90,54 @@ def start_content():
 
     for url in urls:
         try:
-            # Load document for a single URL
-            loader = WebBaseLoader([url])
-            docs = loader.load()
+            # Load document for a single URL using your custom function
+            extracted_document_list = clean_and_extract_data(url) # Renamed docs to extracted_document_list
 
-            if not docs:
+            if not extracted_document_list: # Check for empty list (or None)
                 print(f"No documents loaded for URL: {url}")
+                message += f"No documents loaded for URL: {url}<br>"
                 continue  # Skip to the next URL if no documents are loaded
 
-            # Split the document into chunks
-            chunks = text_splitter.split_documents(docs)
+            # Split the document into chunks - now using correct input type
+            chunks = text_splitter.split_documents(extracted_document_list) # Pass the list of Documents
+            print(chunks)
 
             # Get the CrawledURL instance for this URL to link chunks
             crawled_url_instance = CrawledURL.objects.get(source_url=url)
 
             for chunk in chunks:
-                cleaned_content = clean_text(chunk.page_content)
+                cleaned_content = clean_text(chunk.page_content) # Call clean_text function (now defined)
+                print(cleaned_content)
 
-                # Use update_or_create to prevent duplicates
+                # Use update_or_create to prevent duplicates - Uncommented to store data
                 DocumentChunks.objects.update_or_create(
                     crawled_url=crawled_url_instance,
                     content=cleaned_content,
                     defaults={'embedding': {}}  # Embeddings will be added later
                 )
+                print(f"Stored chunk for URL: {url}") # Indicate storage
+            message += f"Processed and stored chunks for URL: {url}<br>" # Update message
             print(f"Processed and stored chunks for URL: {url}")
+
 
         except CrawledURL.DoesNotExist:
             print(f"CrawledURL instance not found for URL: {url}")
+            message += f"CrawledURL instance not found for URL: {url}<br>"
         except Exception as e:
             print(f"Error processing URL {url}: {e}")
+            message += f"Error processing URL {url}: {e}<br>"
 
-    return render(request, 'data_processing/content_process.html', {'message': message})
+    message += "<br>Content processing completed." # Final message
+    return render(request, 'data_processing/content_process.html', {'message': message}) # Pass message to template
+
+from langchain_community.embeddings.bedrock import BedrockEmbeddings
 
 def get_embedding_function():
-    # Initialize Embeddings (ensure Ollama is running at http://localhost:11434)
-    embedding_model = OllamaEmbeddings(model="llama3.2", base_url="http://localhost:11434")
-    return get_embedding_function
+    embeddings = BedrockEmbeddings(
+        credentials_profile_name="default", region_name="us-east-1"
+    )
+    return embeddings
 
-# Define a function that takes a text input and returns the embedding vector
-    # def embedding_function(text):
-    #     # Generate embedding for the content
-    #     embedding_vector = embedding_model.embed_query(text)
-    #     return embedding_vector
 
 def start_embedding(request):   
     embedding_model = get_embedding_function()
