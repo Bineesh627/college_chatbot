@@ -3,6 +3,7 @@ from .models import CrawledURL, DocumentChunks
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_ollama import OllamaEmbeddings
 from langchain_community.docstore.document import Document
+from langchain_aws import BedrockEmbeddings
 import requests
 from bs4 import BeautifulSoup
 import json  # Import json module
@@ -69,14 +70,6 @@ def clean_and_extract_data(url):
         print(f"An unexpected error occurred: {e}")
         return None
 
-# Clean Text function (moved from WebBaseLoader example)
-def clean_text(text): # Define clean_text function here in views.py
-    text = re.sub(r'\s+', ' ', text)
-    text = re.sub(r'\[email\xa0protected\]', 'email-hidden', text)
-    text = re.sub(r'Toggle navigation', '', text)
-    return text.strip()
-
-
 def start_content(request):
     message = "" # Define message variable
 
@@ -109,7 +102,7 @@ def start_content(request):
             crawled_url_instance = CrawledURL.objects.get(source_url=url)
 
             for chunk in chunks:
-                cleaned_content = clean_text(chunk.page_content) # Call clean_text function (now defined)
+                cleaned_content = chunk.page_content # Extract cleaned content from Document object
                 print(cleaned_content)
 
                 # Use update_or_create to prevent duplicates - Uncommented to store data
@@ -136,10 +129,11 @@ def start_content(request):
 from langchain_community.embeddings.bedrock import BedrockEmbeddings
 
 def get_embedding_function():
-    # embeddings = BedrockEmbeddings(
-    #     credentials_profile_name="default", region_name="us-east-1"
-    # )
-    embeddings = OllamaEmbeddings(model="llama3.2", base_url="http://localhost:11434")
+    embeddings = BedrockEmbeddings(
+        credentials_profile_name="default", region_name="us-east-1"
+    )
+    # embeddings = OllamaEmbeddings(model="nomic-embed-text") # Use this for Ollama embeddings
+    # embeddings = OllamaEmbeddings(model="llama3.2", base_url="http://localhost:11434") # Use this for local Ollama embeddings
     return embeddings
 
 

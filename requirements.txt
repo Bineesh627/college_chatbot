@@ -1,0 +1,9 @@
+django
+numpy
+langchain
+langchain-community
+langchain-ollama
+langchain-aws
+requests
+beautifulsoup4
+boto3
