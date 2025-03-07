@@ -11,9 +11,6 @@ import re
 def data_source(request):
     return render(request, 'data_processing/data_source.html')
 
-def data_source(request):
-    return render(request, 'data_processing/data_source.html')
-
 def decode_email(encoded_email):
     decoded = ''
     hex_value = int(encoded_email[:2], 16)
@@ -30,7 +27,9 @@ def clean_and_extract_data(url):
         # Remove unwanted tags
         for tag in soup(['header', 'footer', 'button', 'script']):
             tag.decompose()
-        for tag in soup.find_all(class_=["bottom-sec", "bottom-sec1", "header"]):
+        for tag in soup.find_all(class_=["bottom-sec", "bottom-sec1", "header", "newses2", "banner-wrapper", "gallery_sec", "read_more2", "read_more", "read_more1"]):
+            tag.decompose()
+        for tag in soup.find_all('div', id=["accordion", "side_nav", "nt-example1-container"]):
             tag.decompose()
 
         # Extract body text
@@ -39,7 +38,11 @@ def clean_and_extract_data(url):
             return None
 
         body_text = body_content.get_text(separator=' ', strip=True)
-        cleaned_text = re.sub(r'\s+', ' ', body_text).strip()
+        symbol_pattern = r"[^\w\s]"
+        cleaned_text = re.sub(symbol_pattern, " ", body_text)
+        cleaned_text = re.sub(r'&nbsp;?', ' ', cleaned_text) #remove &nbsp here.
+        cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
+        cleaned_text = cleaned_text.lower()
 
         # Decode and replace emails
         email_elements = soup.find_all('a', class_='__cf_email__')
@@ -54,7 +57,7 @@ def clean_and_extract_data(url):
 
         # Replace '[email protected]' with the first decoded email (if available)
         if decoded_emails:
-            cleaned_text = cleaned_text.replace('[email protected]', decoded_emails[0])
+            cleaned_text = cleaned_text.replace('email protected', decoded_emails[0])
 
         # Return a list containing a Langchain Document object
         return [Document(page_content=cleaned_text, metadata={"source": url})] # Correct return type
@@ -133,9 +136,10 @@ def start_content(request):
 from langchain_community.embeddings.bedrock import BedrockEmbeddings
 
 def get_embedding_function():
-    embeddings = BedrockEmbeddings(
-        credentials_profile_name="default", region_name="us-east-1"
-    )
+    # embeddings = BedrockEmbeddings(
+    #     credentials_profile_name="default", region_name="us-east-1"
+    # )
+    embeddings = OllamaEmbeddings(model="llama3.2", base_url="http://localhost:11434")
     return embeddings
 
 

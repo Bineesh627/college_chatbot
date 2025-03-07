@@ -13,8 +13,10 @@ def qa_workflow(request):
 
     if request.method == 'POST':
         chat_input_text = request.POST.get('chat_input', '')
+        chat = chat_input_text.lower()
+        print(chat)
         # In later steps, we will process chat_input_text and generate chat_output_text
-        chat_output_text = query_rag(chat_input_text)
+        chat_output_text = query_rag(chat)
 
     context = {
         'chat_input_text': chat_input_text,
@@ -25,6 +27,7 @@ def qa_workflow(request):
 def query_rag(query_text):
     # Get the embedding function
     embedding_model = get_embedding_function()
+    print(query_text)
     # Generate embedding for the query
     query_embedding_vector = embedding_model.embed_query(query_text)
 
@@ -58,7 +61,7 @@ def query_rag(query_text):
     similarities.sort(key=lambda x: x[0], reverse=True)
 
     # 6. Get top k most similar chunks (e.g., top 3)
-    top_k = min(5, len(similarities)) # Adjust k as needed
+    top_k = min(20, len(similarities)) # Adjust k as needed
     top_chunks_with_scores = similarities[:top_k] # Get top chunks with their scores
     top_chunks = [chunk_obj for similarity_score, chunk_obj in top_chunks_with_scores] # Extract just the DocumentChunks objects
     top_documents = [documents_for_search[document_chunks.index(chunk)] for chunk in top_chunks] # Get corresponding Langchain Documents
