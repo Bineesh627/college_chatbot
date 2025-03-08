@@ -126,8 +126,6 @@ def start_content(request):
     message += "<br>Content processing completed." # Final message
     return render(request, 'data_processing/content_process.html', {'message': message}) # Pass message to template
 
-from langchain_community.embeddings.bedrock import BedrockEmbeddings
-
 def get_embedding_function():
     embeddings = BedrockEmbeddings(
         credentials_profile_name="default", region_name="us-east-1"

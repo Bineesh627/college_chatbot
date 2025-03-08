@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add New Prompt</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        form { max-width: 500px; margin: auto; }
+        label { display: block; margin-top: 1em; }
+        input[type="text"], textarea { width: 100%; padding: 8px; }
+        button { margin-top: 1.5em; padding: 10px 20px; }
+    </style>
+</head>
+<body>
+    <h1>Add New Prompt</h1>
+    <form method="post" action="{% url 'add_prompt' %}">
+        {% csrf_token %}
+
+        <label for="prompt_name">Prompt Name:</label>
+        <input type="text" id="prompt_name" name="prompt_name" required>
+
+        <label for="prompt_text">Prompt Text:</label>
+        <textarea id="prompt_text" name="prompt_text" rows="5" required></textarea>
+
+        <label for="is_active">
+            <input type="checkbox" id="is_active" name="is_active" checked>
+            Is Active?
+        </label>
+
+        <button type="submit">Add Prompt</button>
+    </form>
+
+    
+</body>
+</html>

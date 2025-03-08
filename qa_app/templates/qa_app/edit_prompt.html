@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Prompt</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        form { max-width: 500px; margin: auto; }
+        label { display: block; margin-top: 1em; }
+        input[type="text"], textarea { width: 100%; padding: 8px; }
+        button { margin-top: 1.5em; padding: 10px 20px; }
+    </style>
+</head>
+<body>
+    <h1>Edit Prompt</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <label for="prompt_name">Prompt Name:</label>
+        <input type="text" id="prompt_name" name="prompt_name" value="{{ prompt.prompt_name }}" required>
+
+        <label for="prompt_text">Prompt Text:</label>
+        <textarea id="prompt_text" name="prompt_text" rows="5" required>{{ prompt.prompt_text }}</textarea>
+
+        <label for="is_active">
+            <input type="checkbox" id="is_active" name="is_active" {% if prompt.is_active %}checked{% endif %}>
+            Is Active?
+        </label>
+
+        <button type="submit">Save Changes</button>
+    </form>
+    <a href="{% url 'view_prompt' %}">Back to Prompts List</a>
+</body>
+</html>

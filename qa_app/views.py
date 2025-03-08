@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from .models import SystemPrompt
 from django.http import HttpResponse
 import numpy as np 
 from langchain.prompts import ChatPromptTemplate # Import ChatPromptTemplate
@@ -8,18 +9,93 @@ from data_processing.models import DocumentChunks
 from langchain_community.docstore.document import Document
 from data_processing.views import get_embedding_function
 from botocore.exceptions import ClientError
+from django.contrib import messages
 import boto3
 import json
 
-PROMPT_TEMPLATE = """
-Answer the question based only on the following context:
+def index(request):
+    return render(request, 'qa_app/index.html')
 
-{context}
+def prompt_temp(context, question):
+    # Use __in lookup for boolean filtering
+    prompt_obj = SystemPrompt.objects.filter(is_active__in=[True]).first()
+    if not prompt_obj:
+        prompt_obj = SystemPrompt.objects.first()  # Fallback if no active prompt is found
+    
+    PROMPT_TEMPLATE = (
+        f"{prompt_obj.prompt_text}\n\n"
+        "Context:\n"
+        f"{context}\n\n"
+        "Question:\n"
+        f"{question}\n\n"
+        "Answer:\n"
+    )
+    return PROMPT_TEMPLATE
 
----
+def add_prompt(request):
+    if request.method == 'POST':
+        # Retrieve form data
+        prompt_name = request.POST.get('prompt_name')
+        prompt_text = request.POST.get('prompt_text')
+        # Checkbox returns "on" if checked, otherwise None
+        is_active = True if request.POST.get('is_active') == 'on' else False
 
-Answer the question based on the above context: {question}
-"""
+        # Create a new Prompt instance using Django ORM
+        prompt = SystemPrompt(
+            prompt_name=prompt_name,
+            prompt_text=prompt_text,
+            is_active=is_active
+        )
+        prompt.save()
+        messages.success(request, 'prompt_success')
+        return redirect('view_prompt')
+
+    # For GET request, simply render the form
+    return render(request, 'qa_app/add_prompt.html')
+
+def view_prompt(request):
+    # Exclude any prompts that do not have a valid primary key
+    prompts = SystemPrompt.objects.all()
+    context = {
+        'prompts': prompts
+    }
+    return render(request, 'qa_app/view_prompt.html', context)
+
+
+def edit_prompt(request, prompt_id):
+    # Retrieve the prompt or return 404 if not found
+    prompt = get_object_or_404(SystemPrompt, pk=prompt_id)
+
+    if request.method == 'POST':
+        # Update the prompt with submitted data
+        prompt.prompt_name = request.POST.get('prompt_name')
+        prompt.prompt_text = request.POST.get('prompt_text')
+        prompt.is_active = True if request.POST.get('is_active') == 'on' else False
+        prompt.save()
+        messages.success(request, 'Prompt updated successfully.')
+        return redirect('view_prompt')
+
+    # For GET request, prepopulate the form with current prompt data
+    context = {
+        'prompt': prompt
+    }
+    return render(request, 'qa_app/edit_prompt.html', context)
+
+
+def delete_prompt(request, prompt_id):
+    prompt = get_object_or_404(SystemPrompt, pk=prompt_id)
+
+    if request.method == 'POST':
+        prompt.delete()
+        messages.success(request, 'Prompt deleted successfully.')
+        return redirect('view_prompt')
+
+    # Render a confirmation page for deletion
+    context = {
+        'prompt': prompt
+    }
+    return render(request, 'qa_app/delete_prompt.html', context)
+
 
 def invoke_llama3(prompt):
     bedrock_runtime_client = boto3.client(service_name='bedrock-runtime')
@@ -58,6 +134,9 @@ def qa_workflow(request):
         if search_results_docs:
             # Format retrieved documents into context string for prompt
             context_text = "\n\n---\n\n".join([doc.page_content for doc in search_results_docs])
+
+            # Get the prompt template
+            PROMPT_TEMPLATE = prompt_temp(context_text, chat_input_text)
 
             # Create prompt template
             prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
@@ -122,6 +201,7 @@ def query_rag(query_text):
         else:
             similarities.append((0.0, chunk_obj)) # Assign 0 similarity if embedding is missing
 
+        # Store Langchain Document for search results formatting
         documents_for_search.append(
             Document(page_content=chunk_obj.content, metadata={"chunk_id": chunk_obj.chunk_id, "crawled_url_id": chunk_obj.crawled_url_id})
         )

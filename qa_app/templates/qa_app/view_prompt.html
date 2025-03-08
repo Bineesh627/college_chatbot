@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>View Prompts</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f2f2f2; }
+        a { text-decoration: none; color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Prompts List</h1>
+    
+    {% if prompts %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Prompt Name</th>
+                    <th>Prompt Text</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prompt in prompts %}
+                    <tr>
+                        <td>{{ prompt.prompt_name }}</td>
+                        <td>{{ prompt.prompt_text }}</td>
+                        <td>
+                            {% if prompt.is_active %}
+                                Active
+                            {% else %}
+                                Inactive
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'edit_prompt' prompt.pk  %}">Edit</a> |
+                            <a href="{% url 'delete_prompt' prompt.pk %}">Delete</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No prompts available.</p>
+    {% endif %}
+    
+    <a href="{% url 'add_prompt' %}">Add New Prompt</a>
+</body>
+</html>
