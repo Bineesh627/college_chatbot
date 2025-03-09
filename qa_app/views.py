@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import SystemPrompt
 from django.http import HttpResponse
 import numpy as np 
@@ -53,6 +53,7 @@ def add_prompt(request):
     # For GET request, simply render the form
     return render(request, 'qa_app/add_prompt.html')
 
+
 def view_prompt(request):
     # Exclude any prompts that do not have a valid primary key
     prompts = SystemPrompt.objects.all()
@@ -81,6 +82,11 @@ def edit_prompt(request, prompt_id):
     }
     return render(request, 'qa_app/edit_prompt.html', context)
 
+    # For GET request, prepopulate the form with current prompt data
+    context = {
+        'prompt': prompt
+    }
+    return render(request, 'qa_app/edit_prompt.html', context)
 
 def delete_prompt(request, prompt_id):
     prompt = get_object_or_404(SystemPrompt, pk=prompt_id)
