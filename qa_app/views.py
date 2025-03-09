@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import SystemPrompt
 from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 import numpy as np 
 from langchain.prompts import ChatPromptTemplate # Import ChatPromptTemplate
 from langchain_community.llms import Ollama # Import Ollama
@@ -131,51 +133,64 @@ def invoke_llama3(prompt):
 def qa_workflow(request):
     chat_input_text = ""
     chat_output_text = ""
-    search_results_text = "" # Initialize
+    search_results_text = ""
 
     if request.method == 'POST':
-        chat_input_text = request.POST.get('chat_input', '')
-        search_results_docs = query_rag(chat_input_text) # Call query_rag and get Document objects
-
-        if search_results_docs:
-            # Format retrieved documents into context string for prompt
-            context_text = "\n\n---\n\n".join([doc.page_content for doc in search_results_docs])
-
-            # Get the prompt template
-            PROMPT_TEMPLATE = prompt_temp(context_text, chat_input_text)
-
-            # Create prompt template
-            prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-
-            # Format the prompt with context and question
-            prompt = prompt_template.format(context=context_text, question=chat_input_text)
-            print("\n--- Formatted Prompt ---")
-            print(prompt)
-
-            # Initialize Ollama LLM
-            # llm = Ollama(model="llama3.2", base_url="http://localhost:11434") # Ensure Ollama server is running
-
-            # Invoke LLM with the prompt
-            # response_text = llm.invoke(prompt)
-            response_text = invoke_llama3(prompt)
-            print("\n--- LLM Response ---")
-            print(response_text)
-            chat_output_text = response_text # Set LLM response as chat output
-
-            # Format search results for display (optional - you can still show search results if you want)
-            search_results_text = "Retrieved Document Chunks:\n"
-            for i, doc in enumerate(search_results_docs):
-                search_results_text += f"Result {i+1}:\nContent: {doc.page_content[:200]}...\nMetadata: {doc.metadata}\n---\n" # Show snippet of content
-
+        # Get the chat input from the hidden field, not the input field
+        chat_input_text = request.POST.get('chat_input_text', '')
+        
+        # Check if input is empty to avoid the embedding error
+        if not chat_input_text.strip():
+            chat_output_text = "Please enter a question or message."
         else:
-            search_results_text = "No relevant document chunks found for your query."
-            chat_output_text = "I'm sorry, but I couldn't find relevant information to answer your question."
+            try:
+                print(f"Processing query: {chat_input_text}")
+                search_results_docs = query_rag(chat_input_text)
 
+                if search_results_docs:
+                    # Format retrieved documents into context string for prompt
+                    context_text = "\n\n---\n\n".join([doc.page_content for doc in search_results_docs])
 
+                    # Get the prompt template
+                    PROMPT_TEMPLATE = prompt_temp(context_text, chat_input_text)
+
+                    # Create prompt template
+                    prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
+
+                    # Format the prompt with context and question
+                    prompt = prompt_template.format(context=context_text, question=chat_input_text)
+                    print("\n--- Formatted Prompt ---")
+                    print(prompt)
+
+                    # Invoke LLM with the prompt
+                    response_text = invoke_llama3(prompt)
+                    print("\n--- LLM Response ---")
+                    print(response_text)
+                    chat_output_text = response_text
+
+                    # Format search results for display (optional)
+                    search_results_text = "Retrieved Document Chunks:\n"
+                    for i, doc in enumerate(search_results_docs):
+                        search_results_text += f"Result {i+1}:\nContent: {doc.page_content[:200]}...\nMetadata: {doc.metadata}\n---\n"
+                else:
+                    search_results_text = "No relevant document chunks found for your query."
+                    chat_output_text = "I'm sorry, but I couldn't find relevant information to answer your question."
+            except Exception as e:
+                print(f"Error processing request: {str(e)}")
+                chat_output_text = "I'm sorry, but there was an error processing your request."
+
+        # Check if this is an AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'response': chat_output_text,
+                'search_results': search_results_text
+            })
+
+    # For regular GET requests or non-AJAX POST requests
     context = {
         'chat_input_text': chat_input_text,
         'chat_output_text': chat_output_text,
-        'search_results_text': search_results_text # Pass search results for display (optional)
+        'search_results_text': search_results_text
     }
     return render(request, 'qa_app/qa_workflow.html', context)
 
