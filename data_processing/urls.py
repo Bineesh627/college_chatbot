@@ -7,4 +7,5 @@ urlpatterns = [
     path('data_source/', views.data_source, name='data_source'),
     path('embedding_process/', views.start_embedding, name='embedding_process'),
     path('content_process/', views.start_content, name='content_process'),
+    path('pdf_process/', views.pdf_process, name='pdf_process'),
 ]
