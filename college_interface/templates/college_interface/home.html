@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>University College</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+  <style>
+    /* Hero Section */
+    .hero {
+      position: relative;
+      background: url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80')
+        no-repeat center center/cover;
+      height: 80vh;
+    }
+    .hero-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(to right, rgba(0, 0, 139, 0.8), rgba(0, 0, 0, 0.5));
+      display: flex;
+      align-items: center;
+    }
+    /* Announcements */
+    .announcement {
+      white-space: nowrap;
+      overflow-x: auto;
+    }
+    .announcement span,
+    .announcement .fw-bold {
+      display: inline-block;
+      margin-right: 15px;
+    }
+    /* Chatbot styles */
+    #chatbot-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1050;
+    }
+    #chatbot-window {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 300px;
+      max-height: 400px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      z-index: 1050;
+    }
+    #chatbot-window header {
+      background: #0d6efd;
+      color: #fff;
+      padding: 10px;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #chatbot-messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #f8f9fa;
+    }
+    .chat-message {
+      margin-bottom: 10px;
+      padding: 8px;
+      border-radius: 8px;
+      max-width: 80%;
+    }
+    .chat-message.bot {
+      background: #e9ecef;
+      align-self: flex-start;
+    }
+    .chat-message.user {
+      background: #0d6efd;
+      color: #fff;
+      align-self: flex-end;
+    }
+    #chatbot-input {
+      border-top: 1px solid #ddd;
+      padding: 10px;
+      display: flex;
+    }
+    #chatbot-input input {
+      flex: 1;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 5px 10px;
+    }
+    #chatbot-input button {
+      margin-left: 10px;
+    }
+    /* Footer Links */
+    footer a {
+      color: #fff;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-md navbar-dark bg-primary fixed-top">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <i class="bi bi-mortarboard-fill"></i> University College
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="#courses">Courses</a></li>
+          <li class="nav-item"><a class="nav-link" href="#placements">Placements</a></li>
+          <li class="nav-item"><a class="nav-link" href="#faculty">Faculty</a></li>
+          <li class="nav-item"><a class="nav-link" href="#student-life">Student Life</a></li>
+          <li class="nav-item"><a class="nav-link" href="#facilities">Facilities</a></li>
+          <li class="nav-item"><a class="nav-link" href="#admissions">Admissions</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-overlay">
+      <div class="container text-white">
+        <div class="row">
+          <div class="col-md-8">
+            <h1 class="display-4 fw-bold">Shape Your Future at University College</h1>
+            <p class="lead">
+              Join a community of innovators, leaders, and changemakers. Experience world-class education that transforms lives.
+            </p>
+            <a href="#admissions" class="btn btn-lg btn-primary me-2">Apply Now</a>
+            <a href="#courses" class="btn btn-lg btn-outline-light">Explore Programs</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Announcements -->
+  <section class="py-3 bg-primary text-white">
+    <div class="container">
+      <div class="announcement">
+        <span class="fw-bold">Latest Updates:</span>
+        <span>🎓 Admissions open for 2024-25 academic year</span>
+        <span>|</span>
+        <span>📚 Mid-semester examinations schedule released</span>
+        <span>|</span>
+        <span>🏆 Annual Sports Meet starting next week</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="py-5">
+    <div class="container">
+      <div class="row text-center">
+        <div class="col-md-3">
+          <h2 class="display-5 text-primary">15k+</h2>
+          <p>Students</p>
+        </div>
+        <div class="col-md-3">
+          <h2 class="display-5 text-primary">500+</h2>
+          <p>Faculty Members</p>
+        </div>
+        <div class="col-md-3">
+          <h2 class="display-5 text-primary">100+</h2>
+          <p>Research Labs</p>
+        </div>
+        <div class="col-md-3">
+          <h2 class="display-5 text-primary">95%</h2>
+          <p>Placement Rate</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Course Catalog -->
+  <section id="courses" class="py-5 bg-light">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="fw-bold">Academic Programs</h2>
+        <p>
+          Discover our comprehensive range of programs designed to prepare you for success in your chosen field.
+        </p>
+      </div>
+      <div class="row">
+        <!-- Undergraduate Programs -->
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <div class="mb-3" style="font-size: 2rem;">🎓</div>
+              <h5 class="card-title text-primary">Undergraduate Programs</h5>
+              <ul class="list-unstyled">
+                <li>• Computer Science</li>
+                <li>• Business Administration</li>
+                <li>• Engineering</li>
+                <li>• Life Sciences</li>
+              </ul>
+              <a href="#" class="stretched-link text-primary">Learn more →</a>
+            </div>
+          </div>
+        </div>
+        <!-- Graduate Programs -->
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <div class="mb-3" style="font-size: 2rem;">📚</div>
+              <h5 class="card-title text-primary">Graduate Programs</h5>
+              <ul class="list-unstyled">
+                <li>• Data Science</li>
+                <li>• MBA</li>
+                <li>• Robotics</li>
+                <li>• Biotechnology</li>
+              </ul>
+              <a href="#" class="stretched-link text-primary">Learn more →</a>
+            </div>
+          </div>
+        </div>
+        <!-- Diploma Courses -->
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <div class="mb-3" style="font-size: 2rem;">🎯</div>
+              <h5 class="card-title text-primary">Diploma Courses</h5>
+              <ul class="list-unstyled">
+                <li>• Digital Marketing</li>
+                <li>• Web Development</li>
+                <li>• AI & ML</li>
+                <li>• IoT</li>
+              </ul>
+              <a href="#" class="stretched-link text-primary">Learn more →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Placements Section -->
+  <section id="placements" class="py-5">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="fw-bold">Placement Excellence</h2>
+        <p>Our graduates are sought after by leading companies worldwide.</p>
+      </div>
+      <div class="row">
+        <!-- Left Column: Highlights & Top Recruiters -->
+        <div class="col-md-6">
+          <!-- Placement Highlights -->
+          <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title">Placement Highlights</h5>
+                <span class="text-primary">2023-24</span>
+              </div>
+              <div class="row text-center">
+                <div class="col-6 mb-3">
+                  <h4 class="text-primary">₹18L</h4>
+                  <p class="mb-0">Highest Package</p>
+                </div>
+                <div class="col-6 mb-3">
+                  <h4 class="text-primary">₹8L</h4>
+                  <p class="mb-0">Average Package</p>
+                </div>
+                <div class="col-6 mb-3">
+                  <h4 class="text-primary">500+</h4>
+                  <p class="mb-0">Companies</p>
+                </div>
+                <div class="col-6 mb-3">
+                  <h4 class="text-primary">95%</h4>
+                  <p class="mb-0">Placement Rate</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Top Recruiters -->
+          <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title mb-3">Top Recruiters</h5>
+              <div class="row g-2">
+                <div class="col-4">
+                  <div class="p-3 border text-center">Company 1</div>
+                </div>
+                <div class="col-4">
+                  <div class="p-3 border text-center">Company 2</div>
+                </div>
+                <div class="col-4">
+                  <div class="p-3 border text-center">Company 3</div>
+                </div>
+                <div class="col-4">
+                  <div class="p-3 border text-center">Company 4</div>
+                </div>
+                <div class="col-4">
+                  <div class="p-3 border text-center">Company 5</div>
+                </div>
+                <div class="col-4">
+                  <div class="p-3 border text-center">Company 6</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Right Column: Upcoming Placement Drives -->
+        <div class="col-md-6">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title mb-4">Upcoming Placement Drives</h5>
+              <div class="list-group">
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <h6 class="mb-1">Tech Corp</h6>
+                      <small>Software Engineer</small>
+                    </div>
+                    <div class="text-end">
+                      <strong class="text-primary">12-15 LPA</strong><br />
+                      <small>Mar 15</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <h6 class="mb-1">Finance Plus</h6>
+                      <small>Business Analyst</small>
+                    </div>
+                    <div class="text-end">
+                      <strong class="text-primary">10-12 LPA</strong><br />
+                      <small>Mar 18</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <h6 class="mb-1">Design Hub</h6>
+                      <small>UX Designer</small>
+                    </div>
+                    <div class="text-end">
+                      <strong class="text-primary">8-10 LPA</strong><br />
+                      <small>Mar 20</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <h6 class="mb-1">Data Systems</h6>
+                      <small>Data Scientist</small>
+                    </div>
+                    <div class="text-end">
+                      <strong class="text-primary">14-16 LPA</strong><br />
+                      <small>Mar 25</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Faculty Section -->
+  <section id="faculty" class="py-5 bg-light">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="fw-bold">Meet Our Faculty</h2>
+        <p>Learn from industry experts and renowned academicians.</p>
+      </div>
+      <div class="row">
+        <!-- Faculty Member 1 -->
+        <div class="col-md-4 mb-4">
+          <div class="card shadow-sm">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" class="card-img-top" alt="Dr. Sarah Johnson" />
+            <div class="card-body">
+              <h5 class="card-title">Dr. Sarah Johnson</h5>
+              <p class="card-text">Professor, Computer Science</p>
+              <p class="text-primary small">Specialization: Artificial Intelligence</p>
+              <a href="#" class="btn btn-link p-0">View Profile →</a>
+            </div>
+          </div>
+        </div>
+        <!-- Faculty Member 2 -->
+        <div class="col-md-4 mb-4">
+          <div class="card shadow-sm">
+            <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" class="card-img-top" alt="Dr. Michael Chen" />
+            <div class="card-body">
+              <h5 class="card-title">Dr. Michael Chen</h5>
+              <p class="card-text">Associate Professor, Business</p>
+              <p class="text-primary small">Specialization: Strategic Management</p>
+              <a href="#" class="btn btn-link p-0">View Profile →</a>
+            </div>
+          </div>
+        </div>
+        <!-- Faculty Member 3 -->
+        <div class="col-md-4 mb-4">
+          <div class="card shadow-sm">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" class="card-img-top" alt="Dr. Emily Williams" />
+            <div class="card-body">
+              <h5 class="card-title">Dr. Emily Williams</h5>
+              <p class="card-text">Professor, Engineering</p>
+              <p class="text-primary small">Specialization: Robotics</p>
+              <a href="#" class="btn btn-link p-0">View Profile →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Campus Life Section -->
+  <section id="student-life" class="py-5">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="fw-bold">Campus Life</h2>
+        <p>Experience a vibrant and diverse community.</p>
+      </div>
+      <div class="row">
+        <!-- Images Grid -->
+        <div class="col-md-8">
+          <div class="row g-2">
+            <div class="col-6">
+              <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="img-fluid rounded" alt="Campus Life" />
+            </div>
+            <div class="col-6">
+              <img src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="img-fluid rounded" alt="Campus Life" />
+            </div>
+            <div class="col-6">
+              <img src="https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="img-fluid rounded" alt="Campus Life" />
+            </div>
+            <div class="col-6">
+              <img src="https://images.unsplash.com/photo-1519452635265-7b1fbfd1e4e0?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" class="img-fluid rounded" alt="Campus Life" />
+            </div>
+          </div>
+        </div>
+        <!-- Student Activities -->
+        <div class="col-md-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">Student Activities</h5>
+              <hr />
+              <h6>Clubs & Societies</h6>
+              <ul class="list-unstyled">
+                <li>🎭 Cultural Club</li>
+                <li>🤖 Robotics Club</li>
+                <li>🎨 Art Society</li>
+                <li>📚 Literary Club</li>
+              </ul>
+              <h6>Upcoming Events</h6>
+              <ul class="list-unstyled">
+                <li>🎉 Annual Cultural Fest</li>
+                <li>💻 Hackathon</li>
+                <li>🏆 Sports Meet</li>
+                <li>🎓 Graduation Day</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Facilities Section -->
+  <section id="facilities" class="py-5 bg-light">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="fw-bold">World-Class Facilities</h2>
+        <p>State-of-the-art infrastructure for an enhanced learning experience.</p>
+      </div>
+      <div class="row">
+        <div class="col-md-3 mb-4">
+          <div class="card h-100 shadow-sm text-center">
+            <div class="card-body">
+              <div class="mb-3" style="font-size: 2rem;">📚</div>
+              <h5 class="card-title">Digital Library</h5>
+              <p class="card-text">24/7 access to vast digital resources</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-4">
+          <div class="card h-100 shadow-sm text-center">
+            <div class="card-body">
+              <div class="mb-3" style="font-size: 2rem;">🔬</div>
+              <h5 class="card-title">Research Labs</h5>
+              <p class="card-text">Cutting-edge equipment and facilities</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-4">
+          <div class="card h-100 shadow-sm text-center">
+            <div class="card-body">
+              <div class="mb-3" style="font-size: 2rem;">🏃‍♂️</div>
+              <h5 class="card-title">Sports Complex</h5>
+              <p class="card-text">Indoor and outdoor sports facilities</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-4">
+          <div class="card h-100 shadow-sm text-center">
+            <div class="card-body">
+              <div class="mb-3" style="font-size: 2rem;">💻</div>
+              <h5 class="card-title">Smart Classrooms</h5>
+              <p class="card-text">Technology-enabled learning spaces</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Admissions Section -->
+  <section id="admissions" class="py-5">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="fw-bold">Join Our Community</h2>
+        <p>Take the first step towards your future.</p>
+      </div>
+      <div class="row">
+        <!-- Application Process -->
+        <div class="col-md-6 mb-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title mb-4">Application Process</h5>
+              <div class="mb-3">
+                <div class="d-flex mb-2">
+                  <div class="bg-primary text-white rounded p-2 me-3" style="width: 40px; height: 40px; text-align:center;">01</div>
+                  <div>
+                    <h6 class="mb-0">Online Application</h6>
+                    <small>Fill and submit the application form</small>
+                  </div>
+                </div>
+                <div class="d-flex mb-2">
+                  <div class="bg-primary text-white rounded p-2 me-3" style="width: 40px; height: 40px; text-align:center;">02</div>
+                  <div>
+                    <h6 class="mb-0">Document Submission</h6>
+                    <small>Upload required academic documents</small>
+                  </div>
+                </div>
+                <div class="d-flex mb-2">
+                  <div class="bg-primary text-white rounded p-2 me-3" style="width: 40px; height: 40px; text-align:center;">03</div>
+                  <div>
+                    <h6 class="mb-0">Entrance Exam</h6>
+                    <small>Take the university entrance test</small>
+                  </div>
+                </div>
+                <div class="d-flex mb-2">
+                  <div class="bg-primary text-white rounded p-2 me-3" style="width: 40px; height: 40px; text-align:center;">04</div>
+                  <div>
+                    <h6 class="mb-0">Counseling</h6>
+                    <small>Attend the counseling session</small>
+                  </div>
+                </div>
+              </div>
+              <a href="#" class="btn btn-primary w-100">Start Application</a>
+            </div>
+          </div>
+        </div>
+        <!-- Important Dates & Questions -->
+        <div class="col-md-6">
+          <div class="mb-4">
+            <div class="card shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title mb-4">Important Dates</h5>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item d-flex justify-content-between">
+                    <span>Application Opens</span>
+                    <span class="text-primary">March 15, 2024</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between">
+                    <span>Application Deadline</span>
+                    <span class="text-primary">April 30, 2024</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between">
+                    <span>Entrance Exam</span>
+                    <span class="text-primary">May 15, 2024</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between">
+                    <span>Results Declaration</span>
+                    <span class="text-primary">June 1, 2024</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="mb-4">
+            <div class="card shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title mb-4">Have Questions?</h5>
+                <p>
+                  Our admission counselors are here to help you with any queries about the admission process.
+                </p>
+                <div class="d-flex align-items-center mb-2">
+                  <div class="bg-primary text-white rounded p-2 me-3" style="width: 40px; height: 40px; text-align:center;">📞</div>
+                  <div>
+                    <h6 class="mb-0">Call Us</h6>
+                    <small>+1 (123) 456-7890</small>
+                  </div>
+                </div>
+                <div class="d-flex align-items-center">
+                  <div class="bg-primary text-white rounded p-2 me-3" style="width: 40px; height: 40px; text-align:center;">✉️</div>
+                  <div>
+                    <h6 class="mb-0">Email Us</h6>
+                    <small>admissions@university.edu</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-primary text-white pt-5 pb-3">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-3 mb-3">
+          <h5><i class="bi bi-mortarboard-fill"></i> University College</h5>
+          <p>Shaping tomorrow's leaders through excellence in education, research, and innovation.</p>
+        </div>
+        <div class="col-md-3 mb-3">
+          <h6>Quick Links</h6>
+          <ul class="list-unstyled">
+            <li><a href="#courses">Courses</a></li>
+            <li><a href="#faculty">Faculty</a></li>
+            <li><a href="#admissions">Admissions</a></li>
+            <li><a href="#placements">Placements</a></li>
+          </ul>
+        </div>
+        <div class="col-md-3 mb-3">
+          <h6>Contact Us</h6>
+          <ul class="list-unstyled">
+            <li>123 University Road</li>
+            <li>City, State 12345</li>
+            <li>Phone: (123) 456-7890</li>
+            <li>Email: info@university.edu</li>
+          </ul>
+        </div>
+        <div class="col-md-3 mb-3">
+          <h6>Follow Us</h6>
+          <ul class="list-inline">
+            <li class="list-inline-item"><a href="#"><i class="bi bi-facebook"></i></a></li>
+            <li class="list-inline-item"><a href="#"><i class="bi bi-twitter"></i></a></li>
+            <li class="list-inline-item"><a href="#"><i class="bi bi-linkedin"></i></a></li>
+            <li class="list-inline-item"><a href="#"><i class="bi bi-instagram"></i></a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="text-center mt-3">
+        <small>© 2024 University College. All rights reserved.</small>
+      </div>
+    </div>
+  </footer>
+  {% include 'chatbot/chatbot.html' %}
+</body>
+</html>

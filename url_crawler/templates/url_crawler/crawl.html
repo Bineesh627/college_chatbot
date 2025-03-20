@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Crawler</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <script>
+        $(document).ready(function () {
+            let urls = [];
+
+            function fetchUrls() {
+                $.ajax({
+                    url: "/api/get_links/",
+                    type: "GET",
+                    success: function (response) {
+                        // Ensure response.urls exists and is an array
+                        if (response && Array.isArray(response.urls)) {
+                            urls = response.urls;
+                        } else if (Array.isArray(response)) {
+                            // Handle case where response might be the array directly
+                            urls = response;
+                        } else {
+                            // If neither case is true, initialize as empty array
+                            console.warn('Unexpected response format:', response);
+                            urls = [];
+                        }
+                        renderUrls();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching URLs:', error);
+                        urls = []; // Ensure urls is initialized
+                        renderUrls();
+                        alert("Error fetching stored links: " + (error || "Unknown error"));
+                    }
+                });
+            }
+
+
+            // perpare here to edit
+
+            function renderUrls() {
+                let urlList = $("#url-list");
+                urlList.empty();
+
+                if (urls.length === 0) {
+                    urlList.append(`
+            <div class="p-8 text-center text-gray-500">
+                No URLs in the queue. Add a base URL to start crawling.
+            </div>
+        `);
+                    return;
+                }
+
+                urls.forEach(entry => {
+                    const safeEntry = {
+                        link: entry.link || entry.url || '',
+                        status: entry.status || 'pending',
+                        last_updated: entry.last_updated ? new Date(entry.last_updated) : new Date()
+                    };
+
+                    let statusBadge = getStatusBadge(safeEntry.status);
+                    let actionButtons = getActionButtons(safeEntry);
+
+                    let domain = new URL(safeEntry.link).hostname;  // Extract domain from URL
+
+                    urlList.append(`
+            <div class="p-4 flex items-center justify-between border-b">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                        <a href="/links/${domain}" class="font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                            ${safeEntry.link}
+                            <i data-lucide="external-link" class="h-4 w-4"></i>
+                        </a>
+                    </div>
+                    <p class="text-sm text-gray-500">
+                        Last Updated: ${safeEntry.last_updated.toLocaleString()}
+                    </p>
+                </div>
+                <div class="flex items-center gap-4">
+                    ${statusBadge}
+                    ${actionButtons}
+                </div>
+            </div>
+        `);
+                });
+                lucide.createIcons();
+            }
+
+            // function renderUrls() {
+            //     let urlList = $("#url-list");
+            //     urlList.empty();
+
+            //     // Ensure urls is always an array
+            //     if (!Array.isArray(urls)) {
+            //         console.warn('urls is not an array, resetting to empty array');
+            //         urls = [];
+            //     }
+
+            //     if (urls.length === 0) {
+            //         urlList.append(`
+            //             <div class="p-8 text-center text-gray-500">
+            //                 No URLs in the queue. Add a base URL to start crawling.
+            //             </div>
+            //         `);
+            //         return;
+            //     }
+
+            //     urls.forEach(entry => {
+            //         // Ensure entry has all required properties
+            //         const safeEntry = {
+            //             link: entry.link || entry.url || '',
+            //             status: entry.status || 'pending',
+            //             last_updated: entry.last_updated ? new Date(entry.last_updated) : new Date()
+            //         };
+
+            //         let statusBadge = getStatusBadge(safeEntry.status);
+            //         let actionButtons = getActionButtons(safeEntry);
+
+            //         urlList.append(`
+            //             <div class="p-4 flex items-center justify-between border-b">
+            //                 <div class="flex-1">
+            //                     <div class="flex items-center gap-2">
+            //                         <a href="${safeEntry.link}" target="_blank" 
+            //                            class="font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1">
+            //                             ${safeEntry.link}
+            //                             <i data-lucide="external-link" class="h-4 w-4"></i>
+            //                         </a>
+            //                     </div>
+            //                     <p class="text-sm text-gray-500">
+            //                         Last Updated: ${safeEntry.last_updated.toLocaleString()}
+            //                     </p>
+            //                 </div>
+            //                 <div class="flex items-center gap-4">
+            //                     ${statusBadge}
+            //                     ${actionButtons}
+            //                 </div>
+            //             </div>
+            //         `);
+            //     });
+            //     lucide.createIcons();
+            // }
+
+            function getStatusBadge(status) {
+                const statusConfig = {
+                    pending: { color: 'bg-gray-100 text-gray-800', text: 'Not Started' },
+                    crawling: { color: 'bg-blue-100 text-blue-800', text: 'Crawling' },
+                    completed: { color: 'bg-green-100 text-green-800', text: 'Completed' },
+                    failed: { color: 'bg-red-100 text-red-800', text: 'Failed' }
+                };
+                const config = statusConfig[status] || statusConfig.pending;
+                return `<span class="px-3 py-1 rounded-full text-sm font-medium ${config.color}">${config.text}</span>`;
+            }
+
+            function getActionButtons(entry) {
+                if (entry.status === 'crawling') {
+                    return `
+                        <div class="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg">
+                            <i data-lucide="loader-2" class="h-4 w-4 animate-spin"></i>
+                            Crawling...
+                        </div>
+                    `;
+                }
+
+                let crawlButton = '';
+                if (entry.status === 'pending') {
+                    crawlButton = `
+                        <button class="start-crawl flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg" data-url="${entry.link}">
+                            <i data-lucide="play" class="h-4 w-4"></i>
+                            Start Crawling
+                        </button>
+                    `;
+                } else if (entry.status === 'completed' || entry.status === 'failed') {
+                    crawlButton = `
+                        <button class="start-crawl flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 hover:bg-purple-200 rounded-lg" data-url="${entry.link}">
+                            <i data-lucide="rotate-cw" class="h-4 w-4"></i>
+                            Re-crawl
+                        </button>
+                    `;
+                }
+
+                return `
+                    ${crawlButton}
+                    <button class="delete-url p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors" 
+                            data-url="${entry.link}" title="Delete URL">
+                        <i data-lucide="trash-2" class="h-5 w-5"></i>
+                    </button>
+                `;
+            }
+
+            $(document).on("click", ".start-crawl", function () {
+                let url = $(this).data("url");
+                startCrawl(url);
+            });
+
+            $(document).on("click", ".delete-url", function () {
+                let url = $(this).data("url");
+                deleteUrl(url);
+            });
+
+            function startCrawl(url) {
+                let urlEntry = urls.find(entry => entry.link === url);
+                if (!urlEntry) return;
+
+                urlEntry.status = 'crawling';
+                renderUrls();
+
+                fetch(`/crawl/?url=${encodeURIComponent(url)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        urlEntry.status = 'completed';
+                        urlEntry.last_updated = new Date();
+                        renderUrls();
+                    })
+                    .catch(error => {
+                        urlEntry.status = 'failed';
+                        renderUrls();
+                        alert("Error crawling website: " + (error.message || "Unknown error"));
+                    });
+            }
+
+            function deleteUrl(url) {
+                $.ajax({
+                    url: "/api/delete_link/",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ url: url }),
+                    success: function (response) {
+                        urls = urls.filter(entry => entry.link !== url);
+                        renderUrls();
+                    },
+                    error: function (xhr, status, error) {
+                        const errorMessage = xhr && xhr.responseJSON ? xhr.responseJSON.error : error || "Unknown error";
+                        alert("Error deleting link: " + errorMessage);
+                    }
+                });
+            }
+
+            $("#add-url-form").submit(function (event) {
+                // event.preventDefault(); // Prevent page refresh
+
+                let baseUrl = $("#base-url").val().trim();
+                if (!baseUrl) return alert("Please enter a valid URL!");
+
+                $.ajax({
+                    url: "/api/add_link/",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ url: baseUrl }),
+                    success: function (response) {
+                        alert(response.message);
+
+                        // Add the new URL to the queue without refreshing
+                        let newEntry = {
+                            link: baseUrl,
+                            status: "pending",
+                            last_updated: new Date()
+                        };
+                        urls.push(newEntry); // Update the URLs list
+                        renderUrls(); // Re-render the UI to show the new URL
+
+                        $("#base-url").val(""); // Clear input field
+                    },
+                    error: function (xhr) {
+                        alert(xhr.responseJSON.error || "Error adding link.");
+                    }
+                });
+            });
+
+            fetchUrls();
+        });
+    </script>
+</head>
+
+<body class="min-h-screen bg-gray-50">
+    <div class="p-6">
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-4">Website Crawler</h2>
+            <form id="add-url-form" class="flex gap-4 mb-4">
+                <input type="url" id="base-url"
+                    class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter base URL (e.g., https://example.com)">
+                <button type="submit"
+                    class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Add URL
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-lg shadow">
+            <div class="p-4 border-b">
+                <h3 class="font-medium">URL Queue</h3>
+            </div>
+            <div id="url-list" class="divide-y">
+                <div class="p-8 text-center text-gray-500">
+                    No URLs in the queue. Add a base URL to start crawling.
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
