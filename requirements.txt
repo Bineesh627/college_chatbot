@@ -1,0 +1,13 @@
+Django==3.1.12
+requests
+beautifulsoup4
+apscheduler
+langchain
+langchain-community
+boto3
+djongo
+pymongo
+numpy
+langchain-aws
+pypdf
+APScheduler

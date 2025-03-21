@@ -1,15 +1,5 @@
 from django.db import models
 
-class CrawledURL(models.Model):
-    link = models.URLField(unique=True)
-    domain = models.CharField(max_length=255)
-    status = models.IntegerField(default=200)  # HTTP status code
-    is_new = models.BooleanField(default=True)  # Marks new links
-    first_crawled = models.DateTimeField(auto_now_add=True)
-    last_updated = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = "crawled_url"
 
 # Create your models here.
 class CrawlQueue(models.Model):
@@ -30,3 +20,14 @@ class CrawlQueue(models.Model):
 
     class Meta:
         db_table = "crawl_queue"
+        
+class CrawledURL(models.Model):
+    link = models.URLField(unique=True)
+    domain = models.CharField(max_length=255)
+    status = models.IntegerField(default=200)  # HTTP status code
+    is_new = models.BooleanField(default=True)  # Marks new links
+    first_crawled = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "crawled_url"
