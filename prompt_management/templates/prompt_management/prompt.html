@@ -134,8 +134,10 @@
         }
 
         const url = id ? `/api/prompts/edit/${id}/` : '/api/prompts/add/';
+        const method = id ? 'PUT' : 'POST'; // Use PUT for updates
+
         fetch(url, {
-            method: 'POST',
+            method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, content, isActive })
         })
@@ -160,11 +162,15 @@
         document.getElementById('promptName').value = name;
         document.getElementById('promptContent').value = content;
         document.getElementById('promptActive').checked = isActive;
+
+        // Show modal after setting values
+        new bootstrap.Modal(document.getElementById('promptModal')).show();
     }
 
     function toggleStatus(id) {
         fetch(`/api/prompts/toggle-status/${id}/`, { method: 'POST' })
-            .then(() => fetchPrompts())
+            .then(response => response.json())
+            .then(() => fetchPrompts())  // Refresh the list after status update
             .catch(error => alert("Failed to update status."));
     }
 

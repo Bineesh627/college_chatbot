@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'dashboard',
     'model_api',
     'settings',
+    'feedback',
     'pdf_data',
     'chatbot',
 ]

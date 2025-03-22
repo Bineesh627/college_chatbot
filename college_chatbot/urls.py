@@ -15,6 +15,7 @@ urlpatterns = [
     path('', include('dashboard.urls')),
     path('', include('admin_panel.urls')),
     path('', include('settings.urls')),
+    path('', include('feedback.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += staticfiles_urlpatterns()
 if settings.DEBUG:

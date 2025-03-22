@@ -38,20 +38,20 @@
                         <span>Data Sources</span>
                     </a>
                 </li>
-                <li class="{% if request.path == 'prompts/' %}active{% endif %}">
+                <li class="{% if request.path == '/prompts/' %}active{% endif %}">
                     <a href="{% url 'view_prompt' %}" class="nav-link">
                         <i class="bi bi-gear"></i>
                         <span>Configuration</span>
                     </a>
                 </li>
-                <li>
-                    <a href="#" class="nav-link">
+                <li class="{% if request.path == '/monitoring/' %}active{% endif %}">
+                    <a href="{% url 'monitoring' %}" class="nav-link">
                         <i class="bi bi-graph-up"></i>
                         <span>Monitoring</span>
                     </a>
                 </li>
-                <li>
-                    <a href="#" class="nav-link">
+                <li class="{% if request.path == '/feedback/' %}active{% endif %}">
+                    <a href="{% url 'feedback' %}" class="nav-link">
                         <i class="bi bi-chat-dots"></i>
                         <span>Feedback</span>
                     </a>

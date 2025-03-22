@@ -1,0 +1,242 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Feedback - Chatbot Analytics Dashboard{% endblock %}
+
+{% block content %}
+<!-- Page Content -->
+<div id="content">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <button type="button" id="sidebarCollapse" class="btn btn-primary">
+                <i class="bi bi-list"></i>
+            </button>
+            <h2 class="ms-3 mb-0">Chatbot Feedback Analysis</h2>
+        </div>
+    </nav>
+
+    <div class="container-fluid p-4">
+        <!-- Feedback Overview Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Response Accuracy</h5>
+                        <div class="display-4 mb-2">94%</div>
+                        <div class="text-success">
+                            <i class="bi bi-arrow-up"></i> 2.5%
+                            <small class="text-muted">vs last week</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">User Satisfaction</h5>
+                        <div class="display-4 mb-2">4.5</div>
+                        <div class="text-warning">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-half"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Total Responses</h5>
+                        <div class="display-4 mb-2">15.2K</div>
+                        <div class="text-muted">Last 7 days</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Improvement Rate</h5>
+                        <div class="display-4 mb-2">+3.2%</div>
+                        <div class="text-success">Weekly growth</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback Analysis -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Response Quality Trends</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="qualityTrends" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Common Topics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Admissions</span>
+                                <span>32%</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-primary" style="width: 32%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Course Information</span>
+                                <span>28%</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: 28%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Financial Aid</span>
+                                <span>20%</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-info" style="width: 20%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Campus Life</span>
+                                <span>12%</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-warning" style="width: 12%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Feedback Table -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Feedback</h5>
+                <div class="btn-group">
+                    <button class="btn btn-outline-secondary btn-sm active">All</button>
+                    <button class="btn btn-outline-secondary btn-sm">Positive</button>
+                    <button class="btn btn-outline-secondary btn-sm">Negative</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Topic</th>
+                                <th>Query</th>
+                                <th>Rating</th>
+                                <th>Feedback</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2 mins ago</td>
+                                <td>Admissions</td>
+                                <td>Application deadline for Fall 2024</td>
+                                <td>
+                                    <div class="text-warning">
+                                        <i class="bi bi-star-fill"></i>
+                                        <i class="bi bi-star-fill"></i>
+                                        <i class="bi bi-star-fill"></i>
+                                        <i class="bi bi-star-fill"></i>
+                                        <i class="bi bi-star-fill"></i>
+                                    </div>
+                                </td>
+                                <td>Perfect response, very helpful!</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">View</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>15 mins ago</td>
+                                <td>Financial Aid</td>
+                                <td>Scholarship requirements</td>
+                                <td>
+                                    <div class="text-warning">
+                                        <i class="bi bi-star-fill"></i>
+                                        <i class="bi bi-star-fill"></i>
+                                        <i class="bi bi-star-fill"></i>
+                                        <i class="bi bi-star"></i>
+                                        <i class="bi bi-star"></i>
+                                    </div>
+                                </td>
+                                <td>Could be more detailed</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">View</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        // Sidebar toggle
+        $('#sidebarCollapse').click(function () {
+            $('#sidebar').toggleClass('active');
+        });
+
+        $('.sidebar-toggle').click(function () {
+            $('#sidebar').removeClass('active');
+        });
+
+        // Initialize Quality Trends Chart
+        const ctx = document.getElementById('qualityTrends').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Response Accuracy',
+                    data: [92, 93, 94, 93, 95, 94, 96],
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.4
+                }, {
+                    label: 'User Satisfaction',
+                    data: [4.3, 4.4, 4.5, 4.4, 4.6, 4.5, 4.7],
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
