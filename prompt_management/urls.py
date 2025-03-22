@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('api/prompt/', views.view_prompt, name='view_prompt'),
+    path('prompts/', views.view_prompt, name='view_prompt'),
     path('api/prompts/', views.get_prompts, name='get_prompts'),
     path('api/prompts/add/', views.add_prompt, name='add_prompt'),
     path('api/prompts/edit/<int:prompt_id>/', views.edit_prompt, name='edit_prompt'),

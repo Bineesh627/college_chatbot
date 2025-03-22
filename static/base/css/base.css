@@ -1,0 +1,165 @@
+.wrapper {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar {
+    min-width: 250px;
+    max-width: 250px;
+    height: 100vh;
+    background: #1a237e;
+    color: #fff;
+    transition: all 0.3s;
+    position: fixed;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar.active {
+    margin-left: -250px;
+}
+
+.sidebar .sidebar-header {
+    padding: 20px;
+    background: #0d47a1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar ul.components {
+    padding: 20px 0;
+    flex-grow: 1;
+}
+
+.sidebar ul.support-links {
+    padding: 20px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar ul li a {
+    padding: 10px 20px;
+    font-size: 1.1em;
+    display: block;
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.sidebar ul li a:hover,
+.sidebar ul li.active > a {
+    background: #0d47a1;
+}
+
+.sidebar ul li a i {
+    margin-right: 10px;
+}
+
+.sidebar-profile {
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-avatar img {
+    width: 40px;
+    height: 40px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.profile-info h6 {
+    color: #fff;
+    font-size: 0.9rem;
+}
+
+.profile-info small {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.8rem;
+}
+
+#content {
+    flex: 1;
+    margin-left: 250px;
+    min-height: 100vh;
+    transition: all 0.3s;
+    background: #f8f9fa;
+    overflow-x: hidden;
+}
+
+/* When sidebar is collapsed, remove the margin */
+.sidebar.active + #content {
+    margin-left: 0;
+}
+
+.display-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.display-icon i {
+    font-size: 2rem;
+}
+
+.status-card {
+    transition: all 0.3s;
+}
+
+.status-card:hover {
+    transform: translateY(-5px);
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.status-operational {
+    background-color: #28a745;
+}
+
+.status-down {
+    background-color: #dc3545;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        margin-left: -250px;
+    }
+    
+    .sidebar.active {
+        margin-left: 0;
+    }
+    
+    #content {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .wrapper {
+        position: relative;
+    }
+}
+
+/* Add smooth scrolling to the whole page */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Ensure the body takes full height */
+body {
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}

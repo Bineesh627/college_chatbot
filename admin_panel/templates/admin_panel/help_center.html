@@ -1,0 +1,167 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Help Center - Chatbot Analytics Dashboard{% endblock %}
+
+{% block content %}
+<!-- Page Content -->
+<div id="content">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <button type="button" id="sidebarCollapse" class="btn btn-primary">
+                <i class="bi bi-list"></i>
+            </button>
+            <h2 class="ms-3 mb-0">Help Center</h2>
+        </div>
+    </nav>
+
+    <div class="container-fluid p-4">
+        <!-- Quick Start Guide -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Quick Start Guide</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Getting Started</h6>
+                        <ol class="list-group list-group-numbered mb-4">
+                            <li class="list-group-item">Configure your AWS Bedrock settings</li>
+                            <li class="list-group-item">Set up MongoDB for vector storage</li>
+                            <li class="list-group-item">Add your first data source</li>
+                            <li class="list-group-item">Configure the LLaMA model parameters</li>
+                        </ol>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Key Features</h6>
+                        <ul class="list-group mb-4">
+                            <li class="list-group-item">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                RAG-powered chatbot with LLaMA 3.3 70B
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                Automated web crawling and PDF processing
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                Real-time performance monitoring
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                User feedback analysis
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Frequently Asked Questions</h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq1">
+                                How does the RAG system work?
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Our RAG system combines the power of LLaMA 3.3 70B with efficient document
+                                retrieval. When a user asks a question:
+                                <ol>
+                                    <li>The query is converted to embeddings using AWS Bedrock</li>
+                                    <li>Relevant documents are retrieved from MongoDB</li>
+                                    <li>LLaMA generates a response using the retrieved context</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq2">
+                                How do I optimize the model's performance?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                To optimize performance:
+                                <ul>
+                                    <li>Adjust temperature and top-p settings in Configuration</li>
+                                    <li>Fine-tune chunk sizes for document processing</li>
+                                    <li>Monitor and analyze user feedback</li>
+                                    <li>Regularly update your knowledge base</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#faq3">
+                                How do I manage data sources?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                In the Data Sources section, you can:
+                                <ul>
+                                    <li>Add new websites for crawling</li>
+                                    <li>Upload and process PDF documents</li>
+                                    <li>Set crawling schedules and rules</li>
+                                    <li>Monitor ingestion status</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Links -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Additional Resources</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-book text-primary fs-2 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">Documentation</h6>
+                                <a href="#" class="text-decoration-none">View Full Documentation</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-play-circle text-success fs-2 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">Video Tutorials</h6>
+                                <a href="#" class="text-decoration-none">Watch Tutorials</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-people text-info fs-2 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">Community</h6>
+                                <a href="#" class="text-decoration-none">Join Discussion</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

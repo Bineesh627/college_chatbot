@@ -1,0 +1,55 @@
+{% extends 'base/base.html' %}
+
+{% load static %}
+
+{% block title %}Chatbot Analytics Dashboard{% endblock%}
+
+{% block content %}
+
+<!-- Page Content -->
+<div id="content">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <button type="button" id="sidebarCollapse" class="btn btn-primary">
+                <i class="bi bi-list"></i>
+            </button>
+            <h2 class="ms-3 mb-0">Dashboard</h2>
+        </div>
+    </nav>
+
+    <div class="container-fluid p-4">
+        <!-- Total Conversations Card -->
+        <div class="card mb-4">
+            <div class="card-body d-flex align-items-center">
+                <div class="display-icon bg-primary text-white rounded-circle me-3">
+                    <i class="bi bi-chat-dots"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1">Total Conversations</h6>
+                    <h2 id="totalConversations" class="mb-0">Loading...</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status Cards -->
+        <h4 class="mb-3">System Status</h4>
+        <div class="row mb-4" id="statusCards">
+            <!-- Status cards will be dynamically inserted here -->
+        </div>
+
+        <!-- Conversation Trends Chart -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Conversation Trends</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="trendsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'dashboard/js/dashboard.js' %}"></script>
+{% endblock %}

@@ -45,7 +45,10 @@ INSTALLED_APPS = [
     'college_interface',
     'prompt_management',
     'url_crawler',
+    'admin_panel',
+    'dashboard',
     'model_api',
+    'settings',
     'pdf_data',
     'chatbot',
 ]
@@ -129,6 +132,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
