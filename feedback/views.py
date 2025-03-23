@@ -1,5 +1,6 @@
 from django.shortcuts import render
+from admin_panel.decorators import admin_required
 
-# Create your views here.
+@admin_required
 def feedback(request):
     return render(request, 'feedback/feedback.html')

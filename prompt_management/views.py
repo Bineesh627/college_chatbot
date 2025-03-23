@@ -1,19 +1,19 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 import json
 from .models import SystemPrompt
+from admin_panel.decorators import admin_required
 
-# Render the prompt management page
+@admin_required
 def view_prompt(request):
     return render(request, 'prompt_management/prompt.html')
 
-# # API to fetch all prompts
+@admin_required
 def get_prompts(request):
     prompts = list(SystemPrompt.objects.values('prompt_id', 'prompt_name', 'prompt_text', 'is_active'))
     return JsonResponse({'prompts': prompts})
 
-@csrf_exempt  # Debugging only! Remove in production
+@admin_required
 def add_prompt(request):
     if request.method == 'POST':
         try:
@@ -38,8 +38,7 @@ def add_prompt(request):
 
     return JsonResponse({'error': 'Invalid request method!'}, status=405)
 
-# API to edit a prompt
-@csrf_exempt
+@admin_required
 def edit_prompt(request, prompt_id):
     prompt = get_object_or_404(SystemPrompt, prompt_id=prompt_id)
     
@@ -56,9 +55,7 @@ def edit_prompt(request, prompt_id):
 
     return JsonResponse({'error': 'Invalid request'}, status=405)
 
-
-# API to delete a prompt
-@csrf_exempt
+@admin_required
 def delete_prompt(request, prompt_id):
     prompt = get_object_or_404(SystemPrompt, prompt_id=prompt_id)
     if request.method == 'DELETE':
@@ -66,8 +63,7 @@ def delete_prompt(request, prompt_id):
         return JsonResponse({'message': 'Prompt deleted successfully'})
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-# API to toggle prompt status
-@csrf_exempt
+@admin_required
 def toggle_status(request, prompt_id):
     prompt = get_object_or_404(SystemPrompt, prompt_id=prompt_id)
     if request.method == 'POST':

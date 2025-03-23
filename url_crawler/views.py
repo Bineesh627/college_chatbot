@@ -4,14 +4,16 @@ from url_crawler.utils.crawler import crawl_website
 from .models import CrawledURL, CrawlQueue
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
 from urllib.parse import urlparse
 from django.utils.timezone import now
 import json
+from admin_panel.decorators import admin_required
 
+@admin_required
 def crawl(requests):
     return render(requests, 'url_crawler/crawl.html')
 
+@admin_required
 def add_scraped_link(url):
     """Insert link only if its domain is not already in the database."""
     parsed_url = urlparse(url)
@@ -33,12 +35,13 @@ def add_scraped_link(url):
     print(f"Added new link: {scraped_link.link} (Domain: {domain})")
     return {"status": "added", "message": "New link added", "url": url}
 
+@admin_required
 def get_links(request):
     """API to return all stored URLs."""
     links = CrawlQueue.objects.all().values("id", "link", "status", "last_updated")
     return JsonResponse({"urls": list(links)}, safe=False)
 
-@csrf_exempt
+@admin_required
 def delete_link(request):
     if request.method == 'POST':
         try:
@@ -51,7 +54,7 @@ def delete_link(request):
             return JsonResponse({"error": "Invalid JSON"}, status=400)
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
-@csrf_exempt
+@admin_required
 def add_link(request):
     """API endpoint to add a link if the domain is not already in the database."""
     if request.method == 'POST':
@@ -73,6 +76,7 @@ def add_link(request):
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
+@admin_required
 def start_crawl(request):
     base_url = request.GET.get("url")
     if not base_url:
@@ -95,6 +99,7 @@ def start_crawl(request):
 
     return JsonResponse({"message": f"Crawling completed for {base_url}", "status": link_entry.status})
 
+@admin_required
 def view_links_by_domain(request, domain):
     links_list = CrawledURL.objects.filter(domain=domain).order_by('-first_crawled')
 

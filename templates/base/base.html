@@ -73,8 +73,8 @@
                     </a>
                 </li>
 
-                <li>
-                    <a href="#" class="nav-link">
+                <li class="{% if request.path == '/logout/' %}active{% endif %}">
+                    <a href="{% url 'logout' %}" class="nav-link">
                         <i class="bi bi-box-arrow-right"></i>
                         <span>Sign Out</span>
                     </a>

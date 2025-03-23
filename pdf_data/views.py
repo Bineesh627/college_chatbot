@@ -13,6 +13,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from .models import DocumentChunks, UploadedDocument
 from model_api.views import generate_embeddings
+from admin_panel.decorators import admin_required
 
 # Create your views here.
 
@@ -101,6 +102,7 @@ def chunk_content(text):
     ).split_text(text)
     return chunks
 
+@admin_required
 def pdf_process(request):
     # Check if the request method is POST
     if request.method == 'POST':
