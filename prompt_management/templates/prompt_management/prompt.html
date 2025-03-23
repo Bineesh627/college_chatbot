@@ -34,7 +34,6 @@
         </div>
     </div>
 </div>
-</div>
 
 <!-- Modal -->
 <div class="modal fade" id="promptModal" tabindex="-1" aria-hidden="true">
@@ -73,6 +72,19 @@
     document.addEventListener("DOMContentLoaded", function () {
         fetchPrompts();
     });
+
+    // Function to get CSRF Token from Cookies
+    function getCSRFToken() {
+        let cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            let [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') {
+                return value;
+            }
+        }
+        return '';
+    }
+
     function fetchPrompts() {
         fetch('/api/prompts/')
             .then(response => response.json())
@@ -80,7 +92,6 @@
                 const list = document.getElementById('promptList');
                 list.innerHTML = '';
                 data.prompts.forEach(prompt => {
-                    // Escape the name and content to prevent issues with quotes in JS
                     const escapedName = prompt.prompt_name.replace(/'/g, "\\'");
                     const escapedText = prompt.prompt_text.replace(/'/g, "\\'");
 
@@ -115,7 +126,7 @@
 
     function openModal() {
         document.getElementById('modalTitle').innerText = 'Create New Prompt';
-        document.getElementById('promptId').value = ''; // Reset ID for new prompt
+        document.getElementById('promptId').value = '';
         document.getElementById('promptName').value = '';
         document.getElementById('promptContent').value = '';
         document.getElementById('promptActive').checked = true;
@@ -134,26 +145,33 @@
         }
 
         const url = id ? `/api/prompts/edit/${id}/` : '/api/prompts/add/';
-        const method = id ? 'PUT' : 'POST'; // Use PUT for updates
+        const method = id ? 'PUT' : 'POST';
 
         fetch(url, {
             method: method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()  // Include CSRF token
+            },
             body: JSON.stringify({ name, content, isActive })
         })
-            .then(response => response.json())
-            .then(() => {
-                fetchPrompts();
-                bootstrap.Modal.getInstance(document.getElementById('promptModal')).hide();
-            })
-            .catch(error => alert("Failed to save prompt."));
+        .then(response => response.json())
+        .then(() => {
+            fetchPrompts();
+            bootstrap.Modal.getInstance(document.getElementById('promptModal')).hide();
+        })
+        .catch(error => alert("Failed to save prompt."));
     }
 
     function deletePrompt(id) {
         if (!confirm("Are you sure you want to delete this prompt?")) return;
-        fetch(`/api/prompts/delete/${id}/`, { method: 'DELETE' })
-            .then(() => fetchPrompts())
-            .catch(error => alert("Failed to delete prompt."));
+
+        fetch(`/api/prompts/delete/${id}/`, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': getCSRFToken() }  // Include CSRF token
+        })
+        .then(() => fetchPrompts())
+        .catch(error => alert("Failed to delete prompt."));
     }
 
     function editPrompt(id, name, content, isActive) {
@@ -163,27 +181,17 @@
         document.getElementById('promptContent').value = content;
         document.getElementById('promptActive').checked = isActive;
 
-        // Show modal after setting values
         new bootstrap.Modal(document.getElementById('promptModal')).show();
     }
 
     function toggleStatus(id) {
-        fetch(`/api/prompts/toggle-status/${id}/`, { method: 'POST' })
-            .then(response => response.json())
-            .then(() => fetchPrompts())  // Refresh the list after status update
-            .catch(error => alert("Failed to update status."));
-    }
-
-    function clearForm() {
-        document.getElementById('modalTitle').innerText = 'Add Prompt';
-        document.getElementById('promptId').value = '';
-        document.getElementById('promptName').value = '';
-        document.getElementById('promptContent').value = '';
-        document.getElementById('promptActive').checked = false;
-    }
-
-    function toggleStatus(id) {
-        fetchPrompts(); // Refresh the list
+        fetch(`/api/prompts/toggle-status/${id}/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCSRFToken() }  // Include CSRF token
+        })
+        .then(response => response.json())
+        .then(() => fetchPrompts())
+        .catch(error => alert("Failed to update status."));
     }
 </script>
 {% endblock %}

@@ -1,13 +1,13 @@
 import hashlib
 import requests
 import logging
-import os
 import re
 from bs4 import BeautifulSoup
 from django.db import transaction
-from pdf_data.models import CrawledURL, DocumentChunks
 from django.http import JsonResponse
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from pdf_data.models import DocumentChunks
+from url_crawler.models import CrawledURL
 from model_api.views import generate_embeddings
 
 logger = logging.getLogger('custom_logger')
@@ -84,46 +84,49 @@ def chunk_content(text):
     return chunks
 
 def hash_chunk(chunk):
+    """Generates a hash for a text chunk."""
     return hashlib.sha256(chunk.encode()).hexdigest()
 
 def update_database_django_orm(url, crawled_url_instance):
+    """Updates the database with extracted and embedded content."""
     content = get_content(url)
-    if not content.strip():
-        logging.warning(f"No valid content extracted from {url}")
+    if not content:
+        logger.warning(f"No valid content extracted from {url}")
         return
 
     new_chunks = chunk_content(content)
     new_hashes = {hash_chunk(chunk): chunk for chunk in new_chunks}
 
+    # Fetch existing chunks from DB
     existing_chunks = DocumentChunks.objects.filter(crawled_url=crawled_url_instance)
-    old_hashes = {chunk.hash: (chunk.id, chunk.embedding) for chunk in existing_chunks}
+    old_hashes = {chunk.hash: (chunk.chunk_id, chunk.embedding) for chunk in existing_chunks}
 
     to_add = []
     to_delete = []
+
     for chunk_hash, chunk_text in new_hashes.items():
         if chunk_hash not in old_hashes:
-            # New chunk → Generate embedding
             embedding = generate_embeddings(chunk_text)
-            to_add.append(DocumentChunks(crawled_url=crawled_url_instance, content=chunk_text, hash=chunk_hash, embedding=embedding))
+            to_add.append(DocumentChunks(
+                crawled_url=crawled_url_instance, content=chunk_text, hash=chunk_hash, embedding=embedding
+            ))
         else:
-            # Chunk exists, check if embedding is missing
             chunk_id, embedding = old_hashes[chunk_hash]
             if not embedding:
-                # Missing embedding → Generate and update it
                 new_embedding = generate_embeddings(chunk_text)
-                DocumentChunks.objects.filter(id=chunk_id).update(embedding=new_embedding)
-    
-    # Find old chunks that no longer exist
+                DocumentChunks.objects.filter(chunk_id=chunk_id).update(embedding=new_embedding)
+
     to_delete = [chunk_id for chunk_hash, (chunk_id, _) in old_hashes.items() if chunk_hash not in new_hashes]
 
     with transaction.atomic():
-        DocumentChunks.objects.filter(id__in=to_delete).delete()
+        DocumentChunks.objects.filter(chunk_id__in=to_delete).delete()
         DocumentChunks.objects.bulk_create(to_add)
 
-    logging.info(f"Processed URL: {url} - Added: {len(to_add)}, Removed: {len(to_delete)}")
+    logger.info(f"Processed {url} - Added: {len(to_add)}, Removed: {len(to_delete)}")
 
 def process_content_view(request, url=None):
-    logging.info("Starting content processing...")
+    """Django view to process content."""
+    logger.info("Starting content processing...")
 
     processed_count = 0
     error_count = 0
@@ -132,21 +135,14 @@ def process_content_view(request, url=None):
 
     for current_url in urls:
         try:
-            crawled_url_instance, _ = CrawledURL.objects.get_or_create(source_url=current_url, defaults={'status_code': 200})
+            crawled_url_instance, _ = CrawledURL.objects.get_or_create(
+                source_url=current_url, defaults={'status_code': 200}
+            )
             update_database_django_orm(current_url, crawled_url_instance)
             processed_count += 1
-            logging.info(f"Successfully processed: {current_url}")
+            logger.info(f"Successfully processed: {current_url}")
         except Exception as e:
-            logging.error(f"Error processing URL {current_url}: {e}")
+            logger.error(f"Error processing URL {current_url}: {e}")
             error_count += 1
 
-    # Summary Log
-    if processed_count > 0 and error_count == 0:
-        logging.info(f"Content processing completed successfully for {processed_count} URLs.")
-    elif error_count > 0:
-        logging.warning(f"Content processing completed with errors. Processed: {processed_count} URLs, Errors: {error_count}.")
-    else:
-        logging.info("No URLs were processed.")
-
     return JsonResponse({'status': "success" if error_count == 0 else "error", 'processed_count': processed_count, 'error_count': error_count})
-

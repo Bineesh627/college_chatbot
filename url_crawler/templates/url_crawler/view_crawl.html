@@ -68,9 +68,9 @@
                 <tbody>
                     {% for link in links %}
                     <tr>
-                        <td><a href="{{ link.link }}" target="_blank">{{ link.link }}</a></td>
+                        <td><a href="{{ link.source_url }}" target="_blank">{{ link.source_url }}</a></td>
                         <td>{{ link.domain }}</td>
-                        <td><span class="badge bg-success">{{ link.status }}</span></td>
+                        <td><span class="badge bg-success">{{ link.status_code }}</span></td>
                         <td>{% if link.is_new %}✅{% else %}❌{% endif %}</td>
                         <td>{{ link.first_crawled }}</td>
                         <td>{{ link.last_updated }}</td>

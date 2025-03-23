@@ -18,15 +18,71 @@
     </nav>
 
     <div class="container-fluid p-4">
-        <!-- Total Conversations Card -->
-        <div class="card mb-4">
-            <div class="card-body d-flex align-items-center">
-                <div class="display-icon bg-primary text-white rounded-circle me-3">
-                    <i class="bi bi-chat-dots"></i>
+        <!-- Stats Cards Row -->
+        <div class="row mb-4">
+            <div class="col-md-6 col-xl-3 mb-4">
+                <div class="card h-100 border-0 shadow-sm hover-card">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="display-icon bg-primary text-white rounded-circle me-3">
+                            <i class="bi bi-chat-dots"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">Total Conversations</h6>
+                            <h2 id="totalConversations" class="mb-0">Loading...</h2>
+                            <small class="text-success" id="conversationsTrend">
+                                <i class="bi bi-arrow-up"></i>
+                                <span>0%</span>
+                            </small>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <h6 class="text-muted mb-1">Total Conversations</h6>
-                    <h2 id="totalConversations" class="mb-0">Loading...</h2>
+            </div>
+
+            <div class="col-md-6 col-xl-3 mb-4">
+                <div class="card h-100 border-0 shadow-sm hover-card">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="display-icon bg-success text-white rounded-circle me-3">
+                            <i class="bi bi-file-text"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">Processed Documents</h6>
+                            <h2 id="totalDocumentations" class="mb-0">Loading...</h2>
+                            <small class="text-success" id="documentsTrend">
+                                <i class="bi bi-arrow-up"></i>
+                                <span>0%</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-xl-3 mb-4">
+                <div class="card h-100 border-0 shadow-sm hover-card">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="display-icon bg-info text-white rounded-circle me-3">
+                            <i class="bi bi-cpu"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">Embedding Queue</h6>
+                            <h2 id="totalEmbeddings" class="mb-0">Loading...</h2>
+                            <small class="text-info" id="embeddingStatus">Processing</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-xl-3 mb-4">
+                <div class="card h-100 border-0 shadow-sm hover-card">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="display-icon bg-warning text-white rounded-circle me-3">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">Active Crawlers</h6>
+                            <h2 id="totalCrawlers" class="mb-0">Loading...</h2>
+                            <small class="text-warning" id="crawlerStatus">Running</small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -38,8 +94,8 @@
         </div>
 
         <!-- Conversation Trends Chart -->
-        <div class="card">
-            <div class="card-header">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0">
                 <h5 class="card-title mb-0">Conversation Trends</h5>
             </div>
             <div class="card-body">
@@ -48,8 +104,193 @@
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'dashboard/js/dashboard.js' %}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Sidebar Toggle
+        document.getElementById('sidebarCollapse').addEventListener('click', function () {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+
+        // Close sidebar on mobile when clicking the X button
+        document.querySelector('.sidebar-toggle').addEventListener('click', function () {
+            document.getElementById('sidebar').classList.remove('active');
+        });
+
+        // Initialize Chart.js
+        let trendsChart;
+        const ctx = document.getElementById('trendsChart').getContext('2d');
+
+        // Fetch and update data function
+        async function fetchAndUpdateData() {
+            try {
+                // Simulate API call with mock data
+                const mockData = {
+                    totalConversations: 15234,
+                    totalDocuments: 2456,
+                    embeddingQueue: 127,
+                    activeCrawlers: 3,
+                    trends: {
+                        conversations: 12.5,
+                        documents: 8.3
+                    },
+                    conversationTrends: [
+                        { date: '2024-03-01', count: 1200 },
+                        { date: '2024-03-02', count: 1400 },
+                        { date: '2024-03-03', count: 1100 },
+                        { date: '2024-03-04', count: 1600 },
+                        { date: '2024-03-05', count: 1800 },
+                        { date: '2024-03-06', count: 1500 },
+                        { date: '2024-03-07', count: 1700 }
+                    ],
+                    serviceStatuses: [
+                        { name: 'Ollama Service', status: 'operational' },
+                        { name: 'Astra DB', status: 'operational' },
+                        { name: 'API Gateway', status: 'down' }
+                    ]
+                };
+
+                // Update stats cards with animations
+                animateNumber('totalConversations', mockData.totalConversations);
+                animateNumber('totalDocumentations', mockData.totalDocuments);
+                animateNumber('totalEmbeddings', mockData.embeddingQueue);
+                animateNumber('totalCrawlers', mockData.activeCrawlers);
+
+                // Update trends
+                updateTrendIndicator('conversationsTrend', mockData.trends.conversations);
+                updateTrendIndicator('documentsTrend', mockData.trends.documents);
+
+                // Update status cards
+                const statusCardsContainer = document.getElementById('statusCards');
+                statusCardsContainer.innerHTML = mockData.serviceStatuses
+                    .map(service => `
+                    <div class="col-md-4 mb-3">
+                        <div class="card status-card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title mb-0">${service.name}</h5>
+                                    <div class="d-flex align-items-center">
+                                        <span class="status-indicator ${service.status === 'operational' ? 'status-operational' : 'status-down'}"></span>
+                                        <span class="text-${service.status === 'operational' ? 'success' : 'danger'}">
+                                            ${service.status === 'operational' ? 'Operational' : 'Down'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Update chart
+                const chartData = {
+                    labels: mockData.conversationTrends.map(item => item.date),
+                    datasets: [{
+                        label: 'Conversations',
+                        data: mockData.conversationTrends.map(item => item.count),
+                        borderColor: '#1a73e8',
+                        backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                };
+
+                const chartOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                            },
+                            ticks: {
+                                callback: (value) => value.toLocaleString()
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                };
+
+                if (trendsChart) {
+                    trendsChart.data = chartData;
+                    trendsChart.update();
+                } else {
+                    trendsChart = new Chart(ctx, {
+                        type: 'line',
+                        data: chartData,
+                        options: chartOptions
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        // Animate number function
+        function animateNumber(elementId, target) {
+            const element = document.getElementById(elementId);
+            const start = parseInt(element.innerText.replace(/[^0-9]/g, '')) || 0;
+            const duration = 1000; // Animation duration in milliseconds
+            const steps = 60; // Number of steps in animation
+            const increment = (target - start) / steps;
+            let current = start;
+            let step = 0;
+
+            const animation = setInterval(() => {
+                step++;
+                current += increment;
+                element.innerText = Math.round(current).toLocaleString();
+
+                if (step >= steps) {
+                    clearInterval(animation);
+                    element.innerText = target.toLocaleString();
+                }
+            }, duration / steps);
+        }
+
+        // Update trend indicator
+        function updateTrendIndicator(elementId, trend) {
+            const element = document.getElementById(elementId);
+            const icon = element.querySelector('i');
+            const span = element.querySelector('span');
+
+            if (trend > 0) {
+                icon.className = 'bi bi-arrow-up';
+                element.className = 'text-success';
+                span.textContent = `+${trend}%`;
+            } else {
+                icon.className = 'bi bi-arrow-down';
+                element.className = 'text-danger';
+                span.textContent = `${trend}%`;
+            }
+        }
+
+        // Initial data fetch
+        fetchAndUpdateData();
+
+        // Update data every 30 seconds
+        setInterval(fetchAndUpdateData, 30000);
+    });
+</script>
+
 {% endblock %}

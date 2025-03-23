@@ -192,7 +192,16 @@
 
 {% block extra_js %}
 <script>
-    $(document).ready(function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        // Sidebar Toggle
+        document.getElementById('sidebarCollapse').addEventListener('click', function () {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+
+        // Close sidebar on mobile when clicking the X button
+        document.querySelector('.sidebar-toggle').addEventListener('click', function () {
+            document.getElementById('sidebar').classList.remove('active');
+        });
 
         // Initialize Bedrock Metrics Chart
         const ctx = document.getElementById('bedrockMetrics').getContext('2d');
@@ -221,11 +230,94 @@
                 },
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)',
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
                     }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
                 }
             }
         });
+
+        // Function to update metrics
+        function updateMetrics() {
+            // Simulate fetching new metrics
+            const mockMetrics = {
+                responseTime: {
+                    value: 245,
+                    trend: 2.5
+                },
+                accuracy: {
+                    value: 94.5,
+                    trend: 1.2
+                },
+                tokenUsage: {
+                    value: 85200,
+                    trend: 3.8
+                },
+                errorRate: {
+                    value: 0.5,
+                    trend: -0.2
+                }
+            };
+
+            // Update metrics with animations
+            Object.keys(mockMetrics).forEach(metric => {
+                const element = document.querySelector(`[data-metric="${metric}"]`);
+                if (element) {
+                    const valueElement = element.querySelector('.value');
+                    const trendElement = element.querySelector('.trend');
+
+                    // Animate value
+                    animateNumber(valueElement, mockMetrics[metric].value);
+
+                    // Update trend
+                    const trend = mockMetrics[metric].trend;
+                    trendElement.innerHTML = `
+                    <i class="bi bi-arrow-${trend >= 0 ? 'up' : 'down'}"></i>
+                    ${Math.abs(trend)}%
+                `;
+                    trendElement.className = `trend ${trend >= 0 ? 'text-success' : 'text-danger'}`;
+                }
+            });
+        }
+
+        // Animate number function
+        function animateNumber(element, target) {
+            const start = parseFloat(element.textContent) || 0;
+            const duration = 1000;
+            const steps = 60;
+            const increment = (target - start) / steps;
+            let current = start;
+            let step = 0;
+
+            const animation = setInterval(() => {
+                step++;
+                current += increment;
+                element.textContent = current.toFixed(1);
+
+                if (step >= steps) {
+                    clearInterval(animation);
+                    element.textContent = target.toFixed(1);
+                }
+            }, duration / steps);
+        }
+
+        // Initial metrics update
+        updateMetrics();
+
+        // Update metrics every 30 seconds
+        setInterval(updateMetrics, 30000);
     });
 </script>
 {% endblock %}

@@ -40,6 +40,7 @@
             </div>
             <div class="card-body">
                 <form id="add-url-form" class="mb-4">
+                    {% csrf_token %}
                     <div class="input-group">
                         <input type="url" id="base-url" class="form-control"
                             placeholder="Enter base URL (e.g., https://example.com)">
@@ -58,13 +59,12 @@
         </div>
     </div>
 </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     $(document).ready(function () {
-
+        let csrfToken = "{{ csrf_token }}";  // CSRF Token for AJAX requests
         let urls = [];
 
         function fetchUrls() {
@@ -72,14 +72,7 @@
                 url: "/api/get_links/",
                 type: "GET",
                 success: function (response) {
-                    if (response && Array.isArray(response.urls)) {
-                        urls = response.urls;
-                    } else if (Array.isArray(response)) {
-                        urls = response;
-                    } else {
-                        console.warn('Unexpected response format:', response);
-                        urls = [];
-                    }
+                    urls = response.urls || [];
                     renderUrls();
                 },
                 error: function (xhr, status, error) {
@@ -97,10 +90,10 @@
 
             if (urls.length === 0) {
                 urlList.html(`
-                        <div class="text-center text-muted p-4">
-                            No URLs in the queue. Add a base URL to start crawling.
-                        </div>
-                    `);
+                    <div class="text-center text-muted p-4">
+                        No URLs in the queue. Add a base URL to start crawling.
+                    </div>
+                `);
                 return;
             }
 
@@ -114,29 +107,29 @@
                 let statusBadge = getStatusBadge(safeEntry.status);
                 let actionButtons = getActionButtons(safeEntry);
 
-                let domain = new URL(safeEntry.link).hostname;  // Extract domain from URL
+                let domain = new URL(safeEntry.link).hostname;
 
                 urlList.append(`
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1">
-                                        <a href="/links/${domain}" target="_blank" class="font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                                            ${safeEntry.link}
-                                            <i class="bi bi-box-arrow-up-right ms-1"></i>
-                                        </a>
-                                    </h6>
-                                    <small class="text-muted">
-                                        Last Updated: ${safeEntry.last_updated.toLocaleString()}
-                                    </small>
-                                </div>
-                                <div class="d-flex align-items-center gap-2">
-                                    ${statusBadge}
-                                    ${actionButtons}
-                                </div>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">
+                                    <a href="/links/${domain}" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                        ${safeEntry.link}
+                                        <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                    </a>
+                                </h6>
+                                <small class="text-muted">
+                                    Last Updated: ${safeEntry.last_updated.toLocaleString()}
+                                </small>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                ${statusBadge}
+                                ${actionButtons}
                             </div>
                         </div>
-                    `);
+                    </div>
+                `);
             });
         }
 
@@ -154,34 +147,28 @@
         function getActionButtons(entry) {
             if (entry.status === 'crawling') {
                 return `
-                        <div class="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg">
-                            <i data-lucide="loader-2" class="h-4 w-4 animate-spin"></i>
-                            Crawling...
-                        </div>
-                    `;
+                    <div class="bg-blue-100 text-blue-700 rounded-lg p-2">
+                        <i class="bi bi-arrow-repeat animate-spin"></i> Crawling...
+                    </div>
+                `;
             }
 
-            let crawlButton = '';
-            if (entry.status === 'pending') {
-                crawlButton = `
-                        <button class="btn btn-sm btn-success start-crawl" data-url="${entry.link}">
-                            <i class="bi bi-play-fill"></i> Start
-                        </button>
-                    `;
-            } else if (entry.status === 'completed' || entry.status === 'failed') {
-                crawlButton = `
-                        <button class="btn btn-sm btn-primary start-crawl" data-url="${entry.link}">
-                            <i class="bi bi-arrow-clockwise"></i> Re-crawl
-                        </button>
-                    `;
-            }
+            let crawlButton = entry.status === 'pending' ? `
+                <button class="btn btn-sm btn-success start-crawl" data-url="${entry.link}">
+                    <i class="bi bi-play-fill"></i> Start
+                </button>
+            ` : `
+                <button class="btn btn-sm btn-primary start-crawl" data-url="${entry.link}">
+                    <i class="bi bi-arrow-clockwise"></i> Re-crawl
+                </button>
+            `;
 
             return `
-                    ${crawlButton}
-                    <button class="btn btn-sm btn-danger delete-url" data-url="${entry.link}">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                `;
+                ${crawlButton}
+                <button class="btn btn-sm btn-danger delete-url" data-url="${entry.link}">
+                    <i class="bi bi-trash"></i>
+                </button>
+            `;
         }
 
         $(document).on("click", ".start-crawl", function () {
@@ -220,14 +207,14 @@
                 url: "/api/delete_link/",
                 type: "POST",
                 contentType: "application/json",
+                headers: { "X-CSRFToken": csrfToken },
                 data: JSON.stringify({ url: url }),
                 success: function (response) {
                     urls = urls.filter(entry => entry.link !== url);
                     renderUrls();
                 },
-                error: function (xhr, status, error) {
-                    const errorMessage = xhr && xhr.responseJSON ? xhr.responseJSON.error : error || "Unknown error";
-                    alert("Error deleting link: " + errorMessage);
+                error: function (xhr) {
+                    alert(xhr.responseJSON.error || "Error deleting link.");
                 }
             });
         }
@@ -242,16 +229,11 @@
                 url: "/api/add_link/",
                 type: "POST",
                 contentType: "application/json",
+                headers: { "X-CSRFToken": csrfToken },
                 data: JSON.stringify({ url: baseUrl }),
                 success: function (response) {
                     alert(response.message);
-
-                    let newEntry = {
-                        link: baseUrl,
-                        status: "pending",
-                        last_updated: new Date()
-                    };
-                    urls.push(newEntry);
+                    urls.push({ link: baseUrl, status: "pending", last_updated: new Date() });
                     renderUrls();
                     $("#base-url").val("");
                 },

@@ -21,9 +21,10 @@ class CrawlQueue(models.Model):
         db_table = "crawl_queue"
         
 class CrawledURL(models.Model):
-    link = models.URLField(unique=True)
+    crawl_id = models.AutoField(primary_key=True)
+    source_url = models.URLField(unique=True)
     domain = models.CharField(max_length=255)
-    status = models.IntegerField(default=200)  # HTTP status code
+    status_code = models.IntegerField(default=200)  # HTTP status code
     is_new = models.BooleanField(default=True)  # Marks new links
     first_crawled = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)

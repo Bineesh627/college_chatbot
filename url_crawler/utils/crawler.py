@@ -64,13 +64,13 @@ def fetch_and_extract_links(url, domain, new_links, visited):
         soup = BeautifulSoup(response.text, "html.parser")
 
         # Save or update the link in the database
-        link_obj, created = CrawledURL.objects.get_or_create(link=url, defaults={
+        link_obj, created = CrawledURL.objects.get_or_create(source_url=url, defaults={
             "domain": domain,
-            "status": status_code,
+            "status_code": status_code,
             "is_new": True,
         })
         if not created:
-            link_obj.status = status_code
+            link_obj.status_code = status_code
             link_obj.is_new = False
             link_obj.save()
 

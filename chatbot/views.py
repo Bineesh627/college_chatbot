@@ -6,6 +6,10 @@ from langchain.prompts import ChatPromptTemplate # Import ChatPromptTemplate
 from pdf_data.models import DocumentChunks
 from langchain_community.docstore.document import Document
 from model_api.views import generate_embeddings, invoke_llama3
+from .models import ChatSession #if using a relational database.
+import logging
+
+logger = logging.getLogger('custom_logger')
 
 # Create your views here.
 
@@ -29,65 +33,86 @@ def qa_workflow(request):
     chat_input_text = ""
     chat_output_text = ""
     search_results_text = ""
+    current_session = None  # Initialize to avoid UnboundLocalError
 
     if request.method == 'POST':
-        # Get the chat input from the hidden field, not the input field
         chat_input_text = request.POST.get('chat_input_text', '')
-        
-        # Check if input is empty to avoid the embedding error
+
         if not chat_input_text.strip():
             chat_output_text = "Please enter a question or message."
         else:
             try:
-                print(f"Processing query: {chat_input_text}")
                 search_results_docs = query_rag(chat_input_text)
 
                 if search_results_docs:
-                    # Format retrieved documents into context string for prompt
                     context_text = "\n\n---\n\n".join([doc.page_content for doc in search_results_docs])
-
-                    # Get the prompt template
                     PROMPT_TEMPLATE = prompt_temp(context_text, chat_input_text)
-
-                    # Create prompt template
                     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-
-                    # Format the prompt with context and question
                     prompt = prompt_template.format(context=context_text, question=chat_input_text)
-                    print("\n--- Formatted Prompt ---")
-                    print(prompt)
-
-                    # Invoke LLM with the prompt
                     response_text = invoke_llama3(prompt)
-                    print("\n--- LLM Response ---")
-                    print(response_text)
-                    chat_output_text = response_text
 
-                    # Format search results for display (optional)
+                    chat_output_text = response_text
                     search_results_text = "Retrieved Document Chunks:\n"
                     for i, doc in enumerate(search_results_docs):
                         search_results_text += f"Result {i+1}:\nContent: {doc.page_content[:200]}...\nMetadata: {doc.metadata}\n---\n"
                 else:
                     search_results_text = "No relevant document chunks found for your query."
                     chat_output_text = "I'm sorry, but I couldn't find relevant information to answer your question."
+
+                session_id = request.session.session_key
+                if not session_id:
+                    request.session.create()
+                    session_id = request.session.session_key
+
+                try:
+                    current_session = ChatSession.objects.get(session_id=session_id)
+                    history = current_session.conversation_history.get('history', []) if current_session.conversation_history else []
+                except ChatSession.DoesNotExist:
+                    history = []
+                    current_session = ChatSession(session_id=session_id, conversation_history={'history': history})
+                    current_session.save()
+
+                history.append({"user": chat_input_text, "bot": chat_output_text})
+
+                current_session.conversation_history = {'history': history}
+                current_session.save()
+
+                request.session['history'] = history
+                request.session.modified = True
+
             except Exception as e:
-                print(f"Error processing request: {str(e)}")
+                logger.error(f"Error processing request: {e}", exc_info=True)
                 chat_output_text = "I'm sorry, but there was an error processing your request."
 
-        # Check if this is an AJAX request
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'response': chat_output_text,
-                'search_results': search_results_text
+                'search_results': search_results_text,
             })
 
-    # For regular GET requests or non-AJAX POST requests
     context = {
         'chat_input_text': chat_input_text,
         'chat_output_text': chat_output_text,
-        'search_results_text': search_results_text
+        'search_results_text': search_results_text,
     }
+
     return render(request, 'chatbot/chatbot.html', context)
+
+
+def get_chat_history(request):
+    session_id = request.session.session_key
+    if not session_id:
+        request.session.create()  # Ensure the session exists
+        session_id = request.session.session_key
+
+    try:
+        current_session = ChatSession.objects.get(session_id=session_id)
+        history = current_session.conversation_history.get('history', []) if current_session.conversation_history else []
+    except ChatSession.DoesNotExist:
+        history = []
+
+    return JsonResponse({'history': history})
+
 
 def query_rag(query_text):
     # Generate embedding for the query
