@@ -18,7 +18,13 @@
         <div class="row">
             <div class="col-md-3">
                 <div class="list-group">
-                    <a href="#model" class="list-group-item list-group-item-action active" data-bs-toggle="list">
+                    <a href="#profile" class="list-group-item list-group-item-action active" data-bs-toggle="list">
+                        Profile Settings
+                    </a>
+                    <a href="#password" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                        Change Password
+                    </a>
+                    <a href="#model" class="list-group-item list-group-item-action" data-bs-toggle="list">
                         Model Configuration
                     </a>
                     <a href="#aws" class="list-group-item list-group-item-action" data-bs-toggle="list">
@@ -27,50 +33,138 @@
                     <a href="#mongodb" class="list-group-item list-group-item-action" data-bs-toggle="list">
                         MongoDB Configuration
                     </a>
-                    <a href="#crawling" class="list-group-item list-group-item-action" data-bs-toggle="list">
-                        Crawling Settings
-                    </a>
-                    <a href="#security" class="list-group-item list-group-item-action" data-bs-toggle="list">
-                        Security & Access
-                    </a>
-                    <a href="#backup" class="list-group-item list-group-item-action" data-bs-toggle="list">
-                        Backup & Restore
-                    </a>
                 </div>
             </div>
             <div class="col-md-9">
                 <div class="tab-content">
+                    <!-- Profile Settings -->
+                    <div class="tab-pane fade show active" id="profile">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Profile Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if messages %}
+                                <div>
+                                    {% for message in messages %}
+                                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
+                                        role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <form id="profileForm" method="post">
+                                    {% csrf_token %}
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label" for="inputFirstName">First Name</label>
+                                            <input type="text" class="form-control" id="inputFirstName"
+                                                name="first_name" value="{{ request.user.first_name }}"
+                                                placeholder="First name" autocapitalize="off" autocomplete="given-name">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label" for="inputLastName">Last Name</label>
+                                            <input type="text" class="form-control" id="inputLastName" name="last_name"
+                                                value="{{ request.user.last_name }}" placeholder="Last name"
+                                                autocapitalize="off" autocomplete="family-name">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="inputEmail4">Email Address</label>
+                                        <input type="email" class="form-control" id="inputEmail4" name="email"
+                                            value="{{ request.user.email }}" placeholder="Email" autocapitalize="off"
+                                            autocomplete="email">
+                                    </div>
+                                    <button type="submit" name="email_update" class="btn btn-primary">Update
+                                        Profile</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Password Change -->
+                    <div class="tab-pane fade" id="password">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Change Password</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if messages %}
+                                <div>
+                                    {% for message in messages %}
+                                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
+                                        role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <form id="passwordForm" method="post">
+                                    <input type="hidden" name="update_details" value="1">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label class="form-label" for="currentPassword">Current Password</label>
+                                        <input type="password" class="form-control" id="currentPassword"
+                                            name="current_password" autocapitalize="off" autocomplete="current-password"
+                                            required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="inputPasswordNew">New Password</label>
+                                        <input type="password" class="form-control" id="inputPasswordNew"
+                                            name="new_password" autocapitalize="off" autocomplete="new-password"
+                                            required>
+                                        <!-- <div class="form-text">Password must be at least 8 characters long and include
+                                            numbers and special characters.</div> -->
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="inputPasswordNew2">Confirm New Password</label>
+                                        <input type="password" class="form-control" id="inputPasswordNew2"
+                                            name="confirm_password" autocapitalize="off" autocomplete="new-password"
+                                            required>
+                                    </div>
+                                    <button type="submit" name="password_change" class="btn btn-primary">Change
+                                        Password</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Model Configuration -->
-                    <div class="tab-pane fade show active" id="model">
+                    <div class="tab-pane fade" id="model">
                         <div class="card">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">LLaMA Model Settings</h5>
                             </div>
                             <div class="card-body">
-                                <form>
+                                <form id="model-settings-form" method="post">
+                                    {% csrf_token %}
                                     <div class="mb-3">
                                         <label class="form-label">Model Version</label>
-                                        <select class="form-select">
-                                            <option selected>LLaMA 3.3 70B</option>
-                                            <option>LLaMA 3.3 34B</option>
-                                            <option>LLaMA 3.3 13B</option>
+                                        <select class="form-select" name="model_version">
+                                            <option value="LLaMA 3.3 70B" {% if settings and settings.model_version == "LLaMA 3.3 70B" %}selected{% endif %}>LLaMA 3.3 70B</option>
+                                            <option value="LLaMA 3.3 34B" {% if settings and settings.model_version == "LLaMA 3.3 34B" %}selected{% endif %}>LLaMA 3.3 34B</option>
+                                            <option value="LLaMA 3.3 13B" {% if settings and settings.model_version == "LLaMA 3.3 13B" %}selected{% endif %}>LLaMA 3.3 13B</option>
                                         </select>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Temperature</label>
-                                        <input type="range" class="form-range" min="0" max="1" step="0.1" value="0.7">
-                                        <div class="d-flex justify-content-between">
-                                            <small>More Focused</small>
-                                            <small>More Creative</small>
-                                        </div>
+                                        <input type="range" class="form-range" min="0" max="1" step="0.1"
+                                            name="temperature" value="{{ settings.temperature|default:0.5 }}">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Max Tokens</label>
-                                        <input type="number" class="form-control" value="2048">
+                                        <input type="number" class="form-control" name="max_tokens"
+                                            value="{{ settings.max_tokens|default:512 }}">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Context Window</label>
-                                        <input type="number" class="form-control" value="4096">
+                                        <input type="number" class="form-control" name="context_window"
+                                            value="{{ settings.context_window|default:2048 }}">
                                     </div>
                                     <button type="submit" class="btn btn-primary">Update Model Settings</button>
                                 </form>
@@ -85,34 +179,32 @@
                                 <h5 class="card-title mb-0">AWS Bedrock Configuration</h5>
                             </div>
                             <div class="card-body">
-                                <form>
+                                <form id="aws-settings-form" method="post">
+                                    {% csrf_token %}
                                     <div class="mb-3">
                                         <label class="form-label">AWS Region</label>
-                                        <select class="form-select">
-                                            <option>us-east-1</option>
-                                            <option>us-west-2</option>
-                                            <option>eu-west-1</option>
+                                        <select class="form-select" name="aws_region">
+                                            <option value="us-east-1" {% if settings and settings.aws_region == "us-east-1" %}selected{% endif %}>us-east-1</option>
+                                            <option value="us-west-2" {% if settings and settings.aws_region == "us-west-2" %}selected{% endif %}>us-west-2</option>
+                                            <option value="eu-west-1" {% if settings and settings.aws_region == "eu-west-1" %}selected{% endif %}>eu-west-1</option>
                                         </select>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">API Key</label>
-                                        <input type="password" class="form-control" value="••••••••">
+                                        <input type="password" class="form-control" name="api_key"
+                                            value="{{ settings.api_key|default:'' }}">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Secret Key</label>
-                                        <input type="password" class="form-control" value="••••••••">
-                                    </div>
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" checked>
-                                            <label class="form-check-label">Enable API Logging</label>
-                                        </div>
+                                        <input type="password" class="form-control" name="secret_key"
+                                            value="{{ settings.secret_key|default:'' }}">
                                     </div>
                                     <button type="submit" class="btn btn-primary">Save AWS Settings</button>
                                 </form>
                             </div>
                         </div>
                     </div>
+
 
                     <!-- MongoDB Configuration -->
                     <div class="tab-pane fade" id="mongodb">
@@ -140,127 +232,70 @@
                                             <label class="form-check-label">Enable Vector Search</label>
                                         </div>
                                     </div>
-                                    <button type="submit" class="btn btn-primary">Update Database
-                                        Settings</button>
+                                    <button type="submit" class="btn btn-primary">Update Database Settings</button>
                                 </form>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Crawling Settings -->
-                    <div class="tab-pane fade" id="crawling">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Web Crawler Configuration</h5>
-                            </div>
-                            <div class="card-body">
-                                <form>
-                                    <div class="mb-3">
-                                        <label class="form-label">Base URL</label>
-                                        <input type="url" class="form-control" placeholder="https://college.edu">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Crawl Frequency</label>
-                                        <select class="form-select">
-                                            <option>Daily</option>
-                                            <option>Weekly</option>
-                                            <option>Monthly</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Excluded Paths</label>
-                                        <textarea class="form-control" rows="3"
-                                            placeholder="/admin/*, /private/*"></textarea>
-                                    </div>
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" checked>
-                                            <label class="form-check-label">Process PDF Files</label>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Save Crawler Settings</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Security Settings -->
-                    <div class="tab-pane fade" id="security">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Security Configuration</h5>
-                            </div>
-                            <div class="card-body">
-                                <form>
-                                    <div class="mb-3">
-                                        <label class="form-label">API Authentication</label>
-                                        <select class="form-select">
-                                            <option>JWT</option>
-                                            <option>API Key</option>
-                                            <option>OAuth2</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Rate Limiting</label>
-                                        <input type="number" class="form-control" value="100">
-                                        <small class="text-muted">Requests per minute</small>
-                                    </div>
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" checked>
-                                            <label class="form-check-label">Enable SSL/TLS</label>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Update Security
-                                        Settings</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Backup Settings -->
-                    <div class="tab-pane fade" id="backup">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Backup & Restore Configuration</h5>
-                            </div>
-                            <div class="card-body">
-                                <form>
-                                    <div class="mb-3">
-                                        <label class="form-label">Backup Schedule</label>
-                                        <select class="form-select">
-                                            <option>Daily</option>
-                                            <option>Weekly</option>
-                                            <option>Monthly</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Backup Storage</label>
-                                        <select class="form-select">
-                                            <option>AWS S3</option>
-                                            <option>Google Cloud Storage</option>
-                                            <option>Azure Blob Storage</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Retention Period (Days)</label>
-                                        <input type="number" class="form-control" value="30">
-                                    </div>
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" checked>
-                                            <label class="form-check-label">Enable Automatic Backups</label>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Save Backup Settings</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-</div>
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+document.getElementById("model-settings-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+    let formData = new FormData(this);
+
+    fetch("/api/update-model-settings/", {
+        method: "POST",
+        body: formData,
+        headers: { 
+            "X-CSRFToken": getCSRFToken(),
+            "Accept": "application/json" // Ensures response is JSON
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("HTTP error! Status: " + response.status);
+        }
+        return response.json();
+    })
+    // .then(data => alert(data.message))
+    // .catch(error => console.error("Error:", error));
+});
+
+document.getElementById("aws-settings-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+    let formData = new FormData(this);
+
+    fetch("/api/update-aws-settings/", {
+        method: "POST",
+        body: formData,
+        headers: { 
+            "X-CSRFToken": getCSRFToken(),
+            "Accept": "application/json" 
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("HTTP error! Status: " + response.status);
+        }
+        return response.json();
+    })
+    // .then(data => alert(data.message))
+    // .catch(error => console.error("Error:", error));
+});
+
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+</script>
+
 {% endblock %}

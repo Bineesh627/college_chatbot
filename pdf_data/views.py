@@ -12,7 +12,7 @@ from django.conf import settings
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from .models import DocumentChunks, UploadedDocument
-from model_api.views import generate_embeddings
+from model_api.views import generate_embeddings, chunk_content
 from admin_panel.decorators import admin_required
 
 # Create your views here.
@@ -95,12 +95,6 @@ def clean(text):
     text = re.sub(symbol_pattern, " ", text)
     text = re.sub(r'\s+', ' ', text.replace("\n", " ").replace("\t", " ")).strip().lower()
     return text
-
-def chunk_content(text):
-    chunks = RecursiveCharacterTextSplitter(
-        chunk_size=800, chunk_overlap=80, length_function=len, is_separator_regex=False
-    ).split_text(text)
-    return chunks
 
 @admin_required
 def pdf_process(request):

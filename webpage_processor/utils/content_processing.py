@@ -5,10 +5,9 @@ import re
 from bs4 import BeautifulSoup
 from django.db import transaction
 from django.http import JsonResponse
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pdf_data.models import DocumentChunks
 from url_crawler.models import CrawledURL
-from model_api.views import generate_embeddings
+from model_api.views import generate_embeddings, chunk_content
 
 logger = logging.getLogger('custom_logger')
 
@@ -74,14 +73,6 @@ def get_content(url):
     except Exception as e:
         logging.error(f"Unexpected error processing {url}: {e}")
         return None
-
-def chunk_content(text):
-    chunks = RecursiveCharacterTextSplitter(
-        chunk_size=800, chunk_overlap=80, length_function=len, is_separator_regex=False
-    ).split_text(text)
-
-    logging.info(f"Chunked content into {len(chunks)} segments.")
-    return chunks
 
 def hash_chunk(chunk):
     """Generates a hash for a text chunk."""
