@@ -3,8 +3,10 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from concurrent.futures import ThreadPoolExecutor
 from url_crawler.models import CrawledURL
+from pdf_data.models import UploadedDocument  # Ensure this model is imported
+from django.utils.timezone import now
 
-IGNORED_EXTENSIONS = ('.pdf', '.jpg', '.jpeg', '.png', '.gif', '.svg', 
+IGNORED_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.gif', '.svg', 
                       '.mp4', '.avi', '.mov', '.wmv', '.mp3', '.wav', 
                       '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip')
 
@@ -53,11 +55,13 @@ def crawl_website(base_url):
     print("✅ Crawling Completed!")
 
 def fetch_and_extract_links(url, domain, new_links, visited):
-    """ Fetch page content and extract links. """
+    """ Fetch page content and extract links including PDFs. """
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"}
         response = requests.get(url, headers=headers, timeout=5)
+        response.encoding = response.apparent_encoding  # Detect and set proper encoding
         status_code = response.status_code
+
         if status_code != 200:
             return
 
@@ -80,12 +84,31 @@ def fetch_and_extract_links(url, domain, new_links, visited):
             full_url = normalize_url(urljoin(url, href))
 
             if urlparse(full_url).netloc != domain or \
-               any(ignored in urlparse(full_url).path for ignored in IGNORED_PATHS) or \
-               full_url.lower().endswith(IGNORED_EXTENSIONS):
+               any(ignored in urlparse(full_url).path for ignored in IGNORED_PATHS):
                 continue
 
-            if full_url not in visited:
-                new_links.append(full_url)
+            if full_url.lower().endswith(".pdf"):
+                process_and_store_pdf(full_url)
+                continue
 
+            if full_url not in visited and not full_url.lower().endswith(IGNORED_EXTENSIONS):
+                new_links.append(full_url)
+    
     except requests.exceptions.RequestException:
         return
+
+def process_and_store_pdf(pdf_url):
+    """ Process and store PDF links in the UploadedDocument model. """
+    try:
+        pdf_title = pdf_url.split('/')[-1].replace('.pdf', '')  # Extract filename without .pdf extension
+        UploadedDocument.objects.get_or_create(
+            document_url=pdf_url,
+            defaults={
+                "document_title": pdf_title,
+                "file_type": "pdf",
+                "created_at": now(),
+            }
+        )
+        print(f"📄 Stored PDF: {pdf_title} -> {pdf_url}")
+    except Exception as e:
+        print(f"❌ Error storing PDF {pdf_url}: {e}")
