@@ -2,6 +2,7 @@ from django.db import models
 
 # Create your models here.
 class CrawlQueue(models.Model):
+    queue_id = models.AutoField(primary_key=True)
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('crawling', 'Crawling'),

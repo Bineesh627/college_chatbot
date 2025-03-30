@@ -35,7 +35,7 @@ def add_scraped_link(url):
 
 def get_links(request):
     """API to return all stored URLs."""
-    links = CrawlQueue.objects.all().values("id", "link", "status", "last_updated")
+    links = CrawlQueue.objects.all().values("queue_id", "link", "status", "last_updated")
     return JsonResponse({"urls": list(links)}, safe=False)
 
 @csrf_protect
@@ -65,7 +65,7 @@ def add_link(request):
             result = add_scraped_link(url)
 
             # Return the updated list of links
-            all_links = list(CrawlQueue.objects.values("id", "link", "status", "updated_at"))  
+            all_links = list(CrawlQueue.objects.values("queue_id", "link", "status", "updated_at"))  
             return JsonResponse({"status": result["status"], "message": result["message"], "urls": all_links})
 
         except json.JSONDecodeError:
