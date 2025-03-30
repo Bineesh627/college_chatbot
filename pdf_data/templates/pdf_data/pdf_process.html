@@ -122,11 +122,13 @@
     </nav>
     <div class="container">
         <div class="container-fluid p-4">
-            <form id="pdfUploadForm" class="mb-3 d-flex flex-column align-items-center">
+            <form id="pdfUploadForm" method="post" enctype="multipart/form-data" action="{% url 'pdf_process' %}"
+                class="mb-3 d-flex flex-column align-items-center">
+                {% csrf_token %}
                 <div class="upload-box" id="uploadBox">
                     <i class="bi bi-upload"></i>
                     <p>Click or Drag & Drop to Upload a PDF</p>
-                    <input type="file" id="pdfFile" accept=".pdf" class="hidden-input">
+                    <input type="file" id="pdfFile" name="pdfFile" accept=".pdf" class="hidden-input">
                     <button type="submit" class="upload-btn">Upload</button>
                 </div>
                 <p class="file-info" id="fileInfo"></p>
@@ -150,8 +152,12 @@
                     {% for doc in documents %}
                     <tr>
                         <!-- <td>{{ doc.document_title }}</td> -->
+                        {% if doc.document_url == None %}
+                        <td>{{ doc.document_url }}</td>
+                        {% else %}
                         <td><a href="{{ doc.document_url }}" target="_blank">{{ doc.document_url }}</a></td>
-                        <td>{{ doc.file_path }}</td>
+                        {% endif %}
+                        <td><a href="{{ media_url }}{{ doc.file_path }}" target="_blank">{{ doc.file_path }}</a></td>
                         <!-- <td>{{ doc.created_at }}</td>
                         <td>{{ doc.file_type }}</td> -->
                     </tr>
@@ -204,23 +210,41 @@
 
 <script>
     $(document).ready(function () {
-        // Removed the click handler for #uploadBox that was triggering #pdfFile.click()
         $('#pdfFile').change(function () {
             let file = this.files[0];
             if (file) {
                 $('#fileInfo').text(`Selected File: ${file.name}`).show();
             }
         });
-        // Removed the click handler for #uploadBox that was triggering #pdfFile.click()
+
         $('#pdfUploadForm').submit(function (e) {
-            e.preventDefault();
+            e.preventDefault();  // Prevent default only if handling via AJAX
+
             let file = $('#pdfFile')[0].files[0];
             if (!file || file.type !== 'application/pdf') {
                 $('#errorMessage').show();
                 return;
             }
+
+            // ✅ Use AJAX to submit the form
+            let formData = new FormData(this);
+            $.ajax({
+                url: "{% url 'pdf_process' %}",  // Ensure this matches your Django URL name
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    // Reload the page or show a message
+                    location.reload();
+                },
+                error: function () {
+                    alert("Error uploading file. Please try again.");
+                }
+            });
         });
     });
+
 </script>
 
 {% endblock %}
