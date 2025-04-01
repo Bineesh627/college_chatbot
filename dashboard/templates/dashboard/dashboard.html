@@ -111,63 +111,57 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Sidebar Toggle
-        document.getElementById('sidebarCollapse').addEventListener('click', function () {
-            document.getElementById('sidebar').classList.toggle('active');
-        });
+        console.log("DOMContentLoaded event fired. JavaScript is running."); // Debug: Check if DOMContentLoaded is firing
 
-        // Close sidebar on mobile when clicking the X button
-        document.querySelector('.sidebar-toggle').addEventListener('click', function () {
-            document.getElementById('sidebar').classList.remove('active');
-        });
-
-        // Initialize Chart.js
+        // Initialize Chart.js (assuming you have included Chart.js library in your base.html)
         let trendsChart;
-        const ctx = document.getElementById('trendsChart').getContext('2d');
+        const ctx = document.getElementById('trendsChart').getContext('2d'); // Get the canvas element for the chart
 
-        // Fetch and update data function
+        // --- Fetch and Update Data Function ---
         async function fetchAndUpdateData() {
+            console.log("fetchAndUpdateData function called."); // Debug: Check if this function is called
             try {
-                // Simulate API call with mock data
-                const mockData = {
-                    totalConversations: 15234,
-                    totalDocuments: 2456,
-                    embeddingQueue: 127,
-                    activeCrawlers: 3,
-                    trends: {
-                        conversations: 12.5,
-                        documents: 8.3
-                    },
-                    conversationTrends: [
-                        { date: '2024-03-01', count: 1200 },
-                        { date: '2024-03-02', count: 1400 },
-                        { date: '2024-03-03', count: 1100 },
-                        { date: '2024-03-04', count: 1600 },
-                        { date: '2024-03-05', count: 1800 },
-                        { date: '2024-03-06', count: 1500 },
-                        { date: '2024-03-07', count: 1700 }
-                    ],
-                    serviceStatuses: [
-                        { name: 'Ollama Service', status: 'operational' },
-                        { name: 'Astra DB', status: 'operational' },
-                        { name: 'API Gateway', status: 'down' }
-                    ]
-                };
+                const response = await fetch('/api/analytics/'); // Fetch data from your Django API endpoint
+                if (!response.ok) { // Check if the HTTP response status code is in the 200-299 range (success)
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`); // If not successful, throw an error
+                }
+                const data = await response.json(); // Parse the JSON response from the API
 
-                // Update stats cards with animations
-                animateNumber('totalConversations', mockData.totalConversations);
-                animateNumber('totalDocumentations', mockData.totalDocuments);
-                animateNumber('totalEmbeddings', mockData.embeddingQueue);
-                animateNumber('totalCrawlers', mockData.activeCrawlers);
+                if (data.error) { // Check if the JSON response itself contains an 'error' key (for server-side errors)
+                    throw new Error(`Server Error: ${data.error}`); // If there's a server error in the JSON, throw an error
+                }
 
-                // Update trends
-                updateTrendIndicator('conversationsTrend', mockData.trends.conversations);
-                updateTrendIndicator('documentsTrend', mockData.trends.documents);
+                console.log("Data fetched successfully:", data); // Debug: Log the fetched data to the console
+                updateUI(data); // Call function to update the UI with the fetched data
 
-                // Update status cards
-                const statusCardsContainer = document.getElementById('statusCards');
-                statusCardsContainer.innerHTML = mockData.serviceStatuses
-                    .map(service => `
+            } catch (error) {
+                console.error('Error fetching data:', error); // Log any errors during the fetch or processing
+                showErrorMessage("Failed to load analytics data. Please try again later."); // Display an error message on the page
+            }
+        }
+
+        // --- Update UI Function ---
+        function updateUI(data) {
+            if (!data || typeof data !== 'object') { // Check if data is valid and is an object
+                console.error("Invalid data format received:", data); // Log if data is invalid
+                showErrorMessage("Invalid data received from server."); // Display error message
+                return; // Exit the function if data is invalid
+            }
+
+            // --- Update Stats Cards ---
+            animateNumber('totalConversations', data.totalConversations || 0); // Update 'Total Conversations' card, default to 0 if data is missing
+            animateNumber('totalDocumentations', data.totalDocuments || 0);     // Update 'Processed Documents' card, default to 0 if data is missing
+            animateNumber('totalEmbeddings', data.embeddingQueue || 0);      // Update 'Embedding Queue' card, default to 0 if data is missing
+            animateNumber('totalCrawlers', data.activeCrawlers || 0);        // Update 'Active Crawlers' card, default to 0 if data is missing
+
+            // --- Update Trend Indicators ---
+            updateTrendIndicator('conversationsTrend', data.trends?.conversations || 0); // Update 'Conversations Trend', default to 0 if data is missing
+            updateTrendIndicator('documentsTrend', data.trends?.documents || 0);     // Update 'Documents Trend', default to 0 if data is missing
+
+            // --- Update Status Cards ---
+            const statusCardsContainer = document.getElementById('statusCards'); // Get the container for status cards
+            if (statusCardsContainer) { // Check if the container element exists
+                statusCardsContainer.innerHTML = (data.serviceStatuses || []).map(service => `
                     <div class="col-md-4 mb-3">
                         <div class="card status-card h-100 border-0 shadow-sm">
                             <div class="card-body">
@@ -183,113 +177,136 @@
                             </div>
                         </div>
                     </div>
-                `).join('');
-
-                // Update chart
-                const chartData = {
-                    labels: mockData.conversationTrends.map(item => item.date),
-                    datasets: [{
-                        label: 'Conversations',
-                        data: mockData.conversationTrends.map(item => item.count),
-                        borderColor: '#1a73e8',
-                        backgroundColor: 'rgba(26, 115, 232, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                };
-
-                const chartOptions = {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.1)',
-                            },
-                            ticks: {
-                                callback: (value) => value.toLocaleString()
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    interaction: {
-                        mode: 'nearest',
-                        axis: 'x',
-                        intersect: false
-                    }
-                };
-
-                if (trendsChart) {
-                    trendsChart.data = chartData;
-                    trendsChart.update();
-                } else {
-                    trendsChart = new Chart(ctx, {
-                        type: 'line',
-                        data: chartData,
-                        options: chartOptions
-                    });
-                }
-
-            } catch (error) {
-                console.error('Error fetching data:', error);
+                `).join(''); // Generate HTML for status cards based on serviceStatuses data
+            } else {
+                console.error("Status cards container not found."); // Log error if statusCardsContainer is not found
             }
+
+
+            // --- Update Conversation Trends Chart ---
+            updateChart(data.conversationTrends || []); // Update the chart, default to empty array if data is missing
         }
 
-        // Animate number function
+        // --- Animate Number Function ---
         function animateNumber(elementId, target) {
-            const element = document.getElementById(elementId);
-            const start = parseInt(element.innerText.replace(/[^0-9]/g, '')) || 0;
+            const element = document.getElementById(elementId); // Get the element to animate
+            if (!element) return; // If element not found, exit
+
+            let start = parseInt(element.innerText.replace(/[^0-9]/g, '')) || 0; // Get current number, or 0 if not a number
             const duration = 1000; // Animation duration in milliseconds
-            const steps = 60; // Number of steps in animation
-            const increment = (target - start) / steps;
+            const steps = 60;     // Number of animation steps
+            const increment = (target - start) / steps; // Calculate increment per step
             let current = start;
             let step = 0;
 
             const animation = setInterval(() => {
                 step++;
                 current += increment;
-                element.innerText = Math.round(current).toLocaleString();
+                element.innerText = Math.round(current).toLocaleString(); // Update element text with rounded, localized number
 
                 if (step >= steps) {
-                    clearInterval(animation);
-                    element.innerText = target.toLocaleString();
+                    clearInterval(animation); // Stop animation when steps are complete
+                    element.innerText = target.toLocaleString(); // Set final target value
                 }
-            }, duration / steps);
+            }, duration / steps); // Set interval for animation steps
         }
 
-        // Update trend indicator
-        function updateTrendIndicator(elementId, trend) {
-            const element = document.getElementById(elementId);
-            const icon = element.querySelector('i');
-            const span = element.querySelector('span');
+        // --- Update Trend Indicator Function ---
+        function updateTrendIndicator(elementId, trendValue) {
+            const element = document.getElementById(elementId); // Get the trend indicator element
+            if (!element) return; // Exit if element not found
 
-            if (trend > 0) {
-                icon.className = 'bi bi-arrow-up';
-                element.className = 'text-success';
-                span.textContent = `+${trend}%`;
+            const icon = element.querySelector('i'); // Get the icon element inside the indicator
+            const span = element.querySelector('span'); // Get the span element inside the indicator
+
+            if (trendValue > 0) {
+                icon.className = 'bi bi-arrow-up';    // Set class for up arrow icon
+                element.className = 'text-success';  // Set class for success text color
+                span.textContent = `+${trendValue}%`; // Set text with positive trend value
             } else {
-                icon.className = 'bi bi-arrow-down';
-                element.className = 'text-danger';
-                span.textContent = `${trend}%`;
+                icon.className = 'bi bi-arrow-down';  // Set class for down arrow icon
+                element.className = 'text-danger';   // Set class for danger text color
+                span.textContent = `${trendValue}%`;  // Set text with trend value (can be negative or zero)
             }
         }
 
-        // Initial data fetch
-        fetchAndUpdateData();
+        // --- Show Error Message Function ---
+        function showErrorMessage(message) {
+            const contentDiv = document.getElementById('content'); // Get the main content div
+            if (contentDiv) {
+                contentDiv.innerHTML += `<div class="alert alert-danger">${message}</div>`; // Append an error alert message to the content div
+            } else {
+                console.error("Content div not found to display error message."); // Log error if content div is not found
+            }
+        }
 
-        // Update data every 30 seconds
-        setInterval(fetchAndUpdateData, 30000);
+        // --- Update Chart Function ---
+        function updateChart(conversationTrendsData) {
+            if (!ctx) {
+                console.error("Chart context is not available."); // Log error if chart context is not available
+                return;
+            }
+
+            if (trendsChart) {
+                trendsChart.destroy(); // Destroy the previous chart instance if it exists, to update with new data
+            }
+
+            const labels = conversationTrendsData.map(item => item.date); // Extract dates for chart labels
+            const values = conversationTrendsData.map(item => item.count); // Extract counts for chart data
+
+            trendsChart = new Chart(ctx, { // Create a new Chart.js chart instance
+                type: 'line', // Chart type is line chart
+                data: {
+                    labels: labels, // Set labels for the x-axis (dates)
+                    datasets: [{
+                        label: 'Conversations', // Label for the dataset
+                        data: values,         // Data values for the y-axis (counts)
+                        borderColor: '#1a73e8',    // Line color
+                        backgroundColor: 'rgba(26, 115, 232, 0.1)', // Fill color under the line
+                        borderWidth: 2,           // Line width
+                        fill: true,              // Fill the area under the line
+                        tension: 0.4             // Line tension (for smoothing)
+                    }]
+                },
+                options: {
+                    responsive: true, // Make chart responsive to container size
+                    maintainAspectRatio: false, // Allow chart to adjust aspect ratio
+                    plugins: {
+                        legend: {
+                            display: false // Hide the legend
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true, // Start y-axis at zero
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)', // Color of y-axis grid lines
+                            },
+                            ticks: {
+                                callback: (value) => value.toLocaleString() // Format y-axis ticks withtoLocaleString
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false // Hide x-axis grid lines
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest', // Interaction mode for tooltips
+                        axis: 'x',       // Interaction axis is x-axis
+                        intersect: false  // Tooltip does not need to intersect with data point
+                    }
+                }
+            });
+        }
+
+        // --- Initial Data Fetch on DOMContentLoaded ---
+        fetchAndUpdateData(); // Call fetchAndUpdateData when the DOM is fully loaded
+
+        // --- Update Data Periodically (every 30 seconds) ---
+        setInterval(fetchAndUpdateData, 30000); // Call fetchAndUpdateData every 30 seconds (30000 milliseconds)
+
     });
 </script>
 
