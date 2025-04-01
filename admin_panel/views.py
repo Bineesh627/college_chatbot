@@ -29,6 +29,10 @@ def login_view(request):
         # Manual validation
         if not email or not password:
             messages.error(request, 'Email and password are required.')
+        elif "@" not in email or "." not in email:  # Basic email format validation
+            messages.error(request, 'Invalid email format.')
+        elif len(password) < 8: # Example password length validation
+            messages.error(request, 'Password must be at least 8 characters long.')
         else:
             user = authenticate(username=email, password=password)  # Use email as username
 

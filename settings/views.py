@@ -43,16 +43,12 @@ def settings(request):
                         user.last_name = lname
                         user.save()
                         messages.success(request, 'Name updated successfully.')
-                    else:
-                        messages.info(request, 'No changes detected in name fields.')
 
                     # Update email if changed
                     if email and email != user.email:
                         user.email = email
                         user.save()
                         messages.success(request, 'Email updated successfully.')
-                    else:
-                        messages.info(request, 'No changes detected in email field.')
         elif 'password_change' in request.POST:
             old_password = request.POST.get('current_password')
             new_password = request.POST.get('new_password')

@@ -144,27 +144,25 @@
                                 <form id="model-settings-form" method="post">
                                     {% csrf_token %}
                                     <div class="mb-3">
-                                        <label class="form-label">Model Version</label>
-                                        <select class="form-select" name="model_version">
+                                        <label class="form-label" for="model_version">Model Version</label>
+                                        <select class="form-select" id="model_version" name="model_version">
                                             <option value="LLaMA 3.3 70B" {% if settings and settings.model_version == "LLaMA 3.3 70B" %}selected{% endif %}>LLaMA 3.3 70B</option>
                                             <option value="LLaMA 3.3 34B" {% if settings and settings.model_version == "LLaMA 3.3 34B" %}selected{% endif %}>LLaMA 3.3 34B</option>
                                             <option value="LLaMA 3.3 13B" {% if settings and settings.model_version == "LLaMA 3.3 13B" %}selected{% endif %}>LLaMA 3.3 13B</option>
                                         </select>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Temperature</label>
+                                        <label class="form-label" for="temperature">Temperature</label>
                                         <input type="range" class="form-range" min="0" max="1" step="0.1"
-                                            name="temperature" value="{{ settings.temperature|default:0.5 }}">
+                                            name="temperature" id="temperature" value="{{ settings.temperature|default:0.5 }}">
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Max Tokens</label>
-                                        <input type="number" class="form-control" name="max_tokens"
-                                            value="{{ settings.max_tokens|default:512 }}">
+                                        <label class="form-label" for="max_tokens">Max Tokens</label>
+                                        <input type="number" class="form-control" name="max_tokens" id="max_tokens" value="{{ settings.max_tokens|default:512 }}">
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Context Window</label>
-                                        <input type="number" class="form-control" name="context_window"
-                                            value="{{ settings.context_window|default:2048 }}">
+                                        <label class="form-label" for="context_window">Context Window</label>
+                                        <input type="number" class="form-control" name="context_window" id="context_window" value="{{ settings.context_window|default:2048 }}">
                                     </div>
                                     <button type="submit" class="btn btn-primary">Update Model Settings</button>
                                 </form>
@@ -182,22 +180,20 @@
                                 <form id="aws-settings-form" method="post">
                                     {% csrf_token %}
                                     <div class="mb-3">
-                                        <label class="form-label">AWS Region</label>
-                                        <select class="form-select" name="aws_region">
+                                        <label class="form-label" for="aws_region">AWS Region</label>
+                                        <select class="form-select" name="aws_region" id="aws_region">
                                             <option value="us-east-1" {% if settings and settings.aws_region == "us-east-1" %}selected{% endif %}>us-east-1</option>
                                             <option value="us-west-2" {% if settings and settings.aws_region == "us-west-2" %}selected{% endif %}>us-west-2</option>
                                             <option value="eu-west-1" {% if settings and settings.aws_region == "eu-west-1" %}selected{% endif %}>eu-west-1</option>
                                         </select>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">API Key</label>
-                                        <input type="password" class="form-control" name="api_key"
-                                            value="{{ settings.api_key|default:'' }}">
+                                        <label class="form-label" for="api_key">API Key</label>
+                                        <input type="password" class="form-control" name="api_key" id="api_key" value="{{ settings.api_key|default:'' }}">
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Secret Key</label>
-                                        <input type="password" class="form-control" name="secret_key"
-                                            value="{{ settings.secret_key|default:'' }}">
+                                        <label class="form-label" for="secret_key">Secret Key</label>
+                                        <input type="password" class="form-control" name="secret_key" id="secret_key" value="{{ settings.secret_key|default:'' }}">
                                     </div>
                                     <button type="submit" class="btn btn-primary">Save AWS Settings</button>
                                 </form>
@@ -215,21 +211,21 @@
                             <div class="card-body">
                                 <form>
                                     <div class="mb-3">
-                                        <label class="form-label">Connection String</label>
-                                        <input type="text" class="form-control" placeholder="mongodb://...">
+                                        <label class="form-label" for="connectionString">Connection String</label>
+                                        <input type="text" class="form-control" name="connectionString" id="connectionString" placeholder="mongodb://...">
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Database Name</label>
-                                        <input type="text" class="form-control" value="college_chatbot">
+                                        <label class="form-label" for="databaseName">Database Name</label>
+                                        <input type="text" class="form-control" name="databaseName" id="databaseName" value="college_chatbot">
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Collection Name</label>
-                                        <input type="text" class="form-control" value="embeddings">
+                                        <label class="form-label" for="collectionName">Collection Name</label>
+                                        <input type="text" class="form-control" name="collectionName" id="collectionName" value="embeddings">
                                     </div>
                                     <div class="mb-3">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" checked>
-                                            <label class="form-check-label">Enable Vector Search</label>
+                                            <input class="form-check-input" name="enable_vector_search" id="enable_vector_search" type="checkbox" checked>
+                                            <label class="form-check-label" for="enable_vector_search">Enable Vector Search</label>
                                         </div>
                                     </div>
                                     <button type="submit" class="btn btn-primary">Update Database Settings</button>
