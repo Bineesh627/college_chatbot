@@ -196,14 +196,6 @@
 {% block extra_js %}
 <script>
     $(document).ready(function () {
-        // Sidebar toggle
-        $('#sidebarCollapse').click(function () {
-            $('#sidebar').toggleClass('active');
-        });
-
-        $('.sidebar-toggle').click(function () {
-            $('#sidebar').removeClass('active');
-        });
 
         // Initialize Quality Trends Chart
         const ctx = document.getElementById('qualityTrends').getContext('2d');

@@ -1,86 +1,275 @@
 {% load static %}
+
 <link rel="stylesheet" href="{% static 'chatbot/css/chatbot.css' %}">
 
-<div id="chatbot-window" class="d-flex flex-column">
+<div id="chatbot-window">
     <header>
         <span>Chat Support</span>
-        <button id="chatbot-close" class="btn btn-sm btn-light">&times;</button>
+        <button id="chatbot-close">×</button>
     </header>
-    <div id="chatbot-messages" class="d-flex flex-column"></div>
-    <form id="chatForm" action="{% url 'qa_workflow' %}" method="post">
+    <div id="chatbot-messages"></div>
+    <form id="chatForm">
         {% csrf_token %}
-        <input type="hidden" name="chat_input_text" id="chat_input_text" value="">
-        <div id="chatbot-input" class="d-flex">
-            <input type="text" id="chatbot-text" placeholder="Type your message..." class="form-control" />
-            <button id="chatbot-send" class="btn btn-primary ms-2"><i class="bi bi-send-fill"></i></button>
+        <div id="chatbot-input">
+            <input type="text" id="chatbot-text" placeholder="Type your message..." />
+            <div class="action-buttons">
+                <button id="chatbot-send" type="submit">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+                <button id="chatbot-voice" type="button">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                </button>
+            </div>
         </div>
     </form>
 </div>
 
-<button id="chatbot-toggle" class="btn btn-primary rounded-circle">
-    <i class="bi bi-chat-dots-fill"></i>
+<button id="chatbot-toggle">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
 </button>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const chatbotToggle = document.getElementById('chatbot-toggle');
     const chatbotWindow = document.getElementById('chatbot-window');
     const chatbotClose = document.getElementById('chatbot-close');
     const chatbotSend = document.getElementById('chatbot-send');
+    const chatbotVoice = document.getElementById('chatbot-voice');
     const chatbotText = document.getElementById('chatbot-text');
     const chatbotMessages = document.getElementById('chatbot-messages');
     const chatForm = document.getElementById('chatForm');
 
-    function addMessage(text, sender) {
+    let messageCounter = 0;
+    let mediaRecorder = null;
+    let audioChunks = [];
+
+    // Get CSRF token from cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            console.log("All cookies:", cookies); // Log all cookies to console
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    console.log("CSRF Cookie Found:", name, cookieValue); // Log when CSRF cookie is found
+                    break;
+                }
+            }
+        }
+        console.log("CSRF Cookie Value Returned:", cookieValue); // Log the final returned value
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    function updateFeedbackVisibility() {
+        const allFeedbackDivs = document.querySelectorAll('.feedback-icons, .feedback-success');
+        allFeedbackDivs.forEach(div => {
+            div.style.display = 'none';
+        });
+
+        const botMessages = document.querySelectorAll('.message-container');
+        const lastBotMessage = Array.from(botMessages).reverse().find(
+            container => container.querySelector('.chat-message.bot')
+        );
+
+        if (lastBotMessage) {
+            const feedbackIcons = lastBotMessage.querySelector('.feedback-icons');
+            if (feedbackIcons) {
+                feedbackIcons.style.display = 'flex';
+            }
+        }
+    }
+
+    function addMessage(text, sender, showFeedback = true) {
+        const messageContainer = document.createElement('div');
+        messageContainer.classList.add('message-container');
+
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('chat-message', sender);
         msgDiv.textContent = text;
-        chatbotMessages.appendChild(msgDiv);
+        messageContainer.appendChild(msgDiv);
+
+        if (sender === 'bot' && showFeedback) {
+            messageCounter++;
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.classList.add('feedback-icons');
+            feedbackDiv.innerHTML = `
+            <span class="feedback-icon thumbs-up" onclick="submitFeedback(this, 'up', ${messageCounter})">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 10v12"></path>
+                    <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"></path>
+                </svg>
+            </span>
+            <span class="feedback-icon thumbs-down" onclick="submitFeedback(this, 'down', ${messageCounter})">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 14V2"></path>
+                    <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22h0a3.13 3.13 0 0 1-3-3.88Z"></path>
+                </svg>
+            </span>
+        `;
+            messageContainer.appendChild(feedbackDiv);
+
+            const feedbackSuccess = document.createElement('div');
+            feedbackSuccess.classList.add('feedback-success');
+            feedbackSuccess.textContent = 'Thank you for your feedback!';
+            messageContainer.appendChild(feedbackSuccess);
+        }
+
+        chatbotMessages.appendChild(messageContainer);
         chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+
+        if (sender === 'bot') {
+            updateFeedbackVisibility();
+        }
     }
 
-    chatbotToggle.addEventListener('click', () => {
+
+    function submitFeedback(icon, feedbackType, messageId) {
+        const messageContainer = icon.closest('.message-container');
+        const msgDiv = messageContainer.querySelector('.chat-message.bot'); // Get the bot message div
+        const chatbotResponseText = msgDiv.textContent; // Extract bot's response text
+
+        const userMessageContainer = messageContainer.previousElementSibling; // Get the user's message container (previous sibling)
+        const userMsgDiv = userMessageContainer.querySelector('.chat-message.user'); // Get the user message div
+        const userQueryText = userMsgDiv.textContent; // Extract user's query text
+
+
+        const feedbackIcons = messageContainer.querySelector('.feedback-icons');
+        const feedbackSuccess = messageContainer.querySelector('.feedback-success');
+
+        icon.classList.add('animate');
+
+        setTimeout(() => {
+            icon.classList.remove('animate');
+            feedbackIcons.style.display = 'none';
+            feedbackSuccess.style.display = 'block';
+
+            setTimeout(() => {
+                feedbackSuccess.classList.add('fade-out');
+                setTimeout(() => {
+                    feedbackSuccess.style.display = 'none';
+                }, 300);
+            }, 700);
+        }, 300);
+
+        // Send feedback to Django backend
+        fetch('/chatbot/feedback/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                query: userQueryText,            // Send user's query
+                chatbot_response: chatbotResponseText, // Send bot's response
+                feedback_type: feedbackType
+            })
+        });
+    }
+
+    async function initVoiceRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                audioChunks = [];
+
+                addMessage("🎤 Voice message sent", "user");
+
+                // Create FormData and append audio file
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'voice-message.wav');
+
+                try {
+                    const response = await fetch('/chatbot/process-voice/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrftoken,
+                        },
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    addMessage(data.response, "bot");
+                } catch (error) {
+                    console.error('Error processing voice message:', error);
+                    addMessage("Sorry, I couldn't process your voice message.", "bot");
+                }
+            };
+
+        } catch (error) {
+            console.error('Error accessing microphone:', error);
+            alert('Unable to access microphone. Please check your browser permissions.');
+        }
+    }
+
+    chatbotVoice.addEventListener('click', () => {
+        if (!mediaRecorder) {
+            initVoiceRecording();
+            return;
+        }
+
+        if (mediaRecorder.state === 'inactive') {
+            audioChunks = [];
+            mediaRecorder.start();
+            chatbotVoice.classList.add('recording');
+        } else {
+            mediaRecorder.stop();
+            chatbotVoice.classList.remove('recording');
+        }
+    });
+
+    chatbotToggle.addEventListener('click', async () => {
         chatbotWindow.classList.add('show');
         chatbotToggle.style.display = 'none';
 
         if (chatbotMessages.children.length === 0) {
-            fetch('/get_chat_history/', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("Failed to fetch chat history");
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.history && data.history.length > 0) {
-                        data.history.forEach(message => {
-                            addMessage(message.user, "user");
-                            addMessage(message.bot, "bot");
-                        });
-                    } else {
-                        // Fallback: Show default bot message
-                        addMessage("Hello! How can I help you today?", "bot");
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching chat history:', error);
+            try {
+                const response = await fetch('/chatbot/history/');
+                const data = await response.json();
+
+                if (data.history && data.history.length > 0) {
+                    data.history.forEach(msg => {
+                        addMessage(msg.user, 'user', false);
+                        addMessage(msg.bot, 'bot', msg === data.history[data.history.length - 1]);
+                    });
+                } else {
                     addMessage("Hello! How can I help you today?", "bot");
-                });
+                }
+            } catch (error) {
+                console.error('Error fetching chat history:', error);
+                addMessage("Hello! How can I help you today?", "bot");
+            }
         }
     });
 
-
     chatbotClose.addEventListener('click', () => {
         chatbotWindow.classList.remove('show');
-        chatbotToggle.style.display = 'block';
+        chatbotToggle.style.display = 'flex';
     });
 
-    function sendMessage(e) {
+    async function sendMessage(e) {
         if (e) {
             e.preventDefault();
         }
@@ -90,35 +279,39 @@
 
         addMessage(text, "user");
         chatbotText.value = "";
-        document.getElementById('chat_input_text').value = text;
 
         const loadingDiv = document.createElement('div');
         loadingDiv.classList.add('chat-message', 'bot', 'loading');
-        loadingDiv.textContent = "Thinking...";
+        loadingDiv.textContent = "Thinking";
         chatbotMessages.appendChild(loadingDiv);
 
-        const formData = new FormData(chatForm);
-
-        fetch(chatForm.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-            .then(response => response.json())
-            .then(data => {
-                chatbotMessages.removeChild(loadingDiv);
-                addMessage(data.response, "bot");
-            })
-            .catch(error => {
-                chatbotMessages.removeChild(loadingDiv);
-                addMessage("Sorry, there was an error processing your request.", "bot");
-                console.error('Error:', error);
+        try {
+            const response = await fetch('/chatbot/qa/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: `chat_input_text=${encodeURIComponent(text)}`
             });
+
+            const data = await response.json();
+            chatbotMessages.removeChild(loadingDiv);
+            addMessage(data.response, "bot");
+
+            // If you want to show search results
+            if (data.search_results) {
+                console.log('Search Results:', data.search_results);
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            chatbotMessages.removeChild(loadingDiv);
+            addMessage("I'm sorry, but there was an error processing your request.", "bot");
+        }
     }
 
-    chatbotSend.addEventListener('click', (e) => {
+    chatForm.addEventListener('submit', (e) => {
         e.preventDefault();
         sendMessage();
     });
