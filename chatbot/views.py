@@ -11,7 +11,7 @@ from pdf_data.models import DocumentChunks
 from langchain_community.docstore.document import Document
 from model_api.views import generate_embeddings, invoke_llama3
 from .models import ChatSession
-from feedback.models import ChatFeedback
+from feedback.models import ChatbotFeedback
 import logging
 
 logger = logging.getLogger('custom_logger')
@@ -135,10 +135,10 @@ def submit_feedback(request):
             return JsonResponse({'status': 'error', 'message': 'Chat session not found'}, status=400)
 
         # Create ChatFeedback instance
-        feedback_instance = ChatFeedback(
+        feedback_instance = ChatbotFeedback(
             session=chat_session,
             query=query,
-            chatbot_response=chatbot_response,
+            response=chatbot_response,
             thumbs_up=(feedback_type == 'up'), # Convert 'up'/'down' to Boolean for thumbs_up field
         )
         feedback_instance.save()

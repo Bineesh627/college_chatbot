@@ -17,48 +17,35 @@
     <div class="container-fluid p-4">
         <!-- Feedback Overview Cards -->
         <div class="row mb-4">
+            <!-- Response Accuracy Card (Dynamic) -->
             <div class="col-md-3">
                 <div class="card">
                     <div class="card-body text-center">
                         <h5 class="card-title">Response Accuracy</h5>
-                        <div class="display-4 mb-2">94%</div>
-                        <div class="text-success">
-                            <i class="bi bi-arrow-up"></i> 2.5%
-                            <small class="text-muted">vs last week</small>
+                        <div class="display-4 mb-2" id="responseAccuracy">Loading...</div>
+                        <div id="accuracyChange">
+                            <span class="text-muted">Loading...</span>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">User Satisfaction</h5>
-                        <div class="display-4 mb-2">4.5</div>
-                        <div class="text-warning">
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-half"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Total Responses Card (Dynamic) -->
             <div class="col-md-3">
                 <div class="card">
                     <div class="card-body text-center">
                         <h5 class="card-title">Total Responses</h5>
-                        <div class="display-4 mb-2">15.2K</div>
+                        <div class="display-4 mb-2" id="totalResponses">Loading...</div>
                         <div class="text-muted">Last 7 days</div>
                     </div>
                 </div>
             </div>
+            <!-- Improvement Rate Card (Dynamic) -->
             <div class="col-md-3">
                 <div class="card">
                     <div class="card-body text-center">
                         <h5 class="card-title">Improvement Rate</h5>
-                        <div class="display-4 mb-2">+3.2%</div>
-                        <div class="text-success">Weekly growth</div>
+                        <div class="display-4 mb-2" id="improvementRate">Loading...</div>
+                        <div class="text-muted" id="improvementRateSubtext">Accuracy vs last week</div>
                     </div>
                 </div>
             </div>
@@ -66,123 +53,42 @@
 
         <!-- Feedback Analysis -->
         <div class="row mb-4">
+            <!-- Quality Trends Chart (Dynamic) -->
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Response Quality Trends</h5>
+                        <h5 class="card-title mb-0">Response Accuracy Trend</h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body position-relative">
                         <canvas id="qualityTrends" height="300"></canvas>
+                        <div id="chartMessage" class="text-muted text-center position-absolute top-50 start-50 translate-middle" style="display: none; z-index: 10;"></div>
                     </div>
                 </div>
             </div>
+            <!-- Common Topics (Dynamic) -->
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-header">
                         <h5 class="card-title mb-0">Common Topics</h5>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>Admissions</span>
-                                <span>32%</span>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar bg-primary" style="width: 32%"></div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>Course Information</span>
-                                <span>28%</span>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar bg-success" style="width: 28%"></div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>Financial Aid</span>
-                                <span>20%</span>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar bg-info" style="width: 20%"></div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>Campus Life</span>
-                                <span>12%</span>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar bg-warning" style="width: 12%"></div>
-                            </div>
-                        </div>
+                    <div class="card-body" id="commonTopicsContainer">
+                         <div class="text-center text-muted">Loading topics...</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Recent Feedback Table -->
+        <!-- Recent Feedback Table (Static) -->
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Recent Feedback</h5>
-                <div class="btn-group">
-                    <button class="btn btn-outline-secondary btn-sm active">All</button>
-                    <button class="btn btn-outline-secondary btn-sm">Positive</button>
-                    <button class="btn btn-outline-secondary btn-sm">Negative</button>
-                </div>
-            </div>
-            <div class="card-body">
+             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Topic</th>
-                                <th>Query</th>
-                                <th>Rating</th>
-                                <th>Feedback</th>
-                                <th>Action</th>
-                            </tr>
+                            <tr><th>Time</th><th>Topic</th><th>Query</th><th>Rating</th><th>Feedback</th><th>Action</th></tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>2 mins ago</td>
-                                <td>Admissions</td>
-                                <td>Application deadline for Fall 2024</td>
-                                <td>
-                                    <div class="text-warning">
-                                        <i class="bi bi-star-fill"></i>
-                                        <i class="bi bi-star-fill"></i>
-                                        <i class="bi bi-star-fill"></i>
-                                        <i class="bi bi-star-fill"></i>
-                                        <i class="bi bi-star-fill"></i>
-                                    </div>
-                                </td>
-                                <td>Perfect response, very helpful!</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">View</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>15 mins ago</td>
-                                <td>Financial Aid</td>
-                                <td>Scholarship requirements</td>
-                                <td>
-                                    <div class="text-warning">
-                                        <i class="bi bi-star-fill"></i>
-                                        <i class="bi bi-star-fill"></i>
-                                        <i class="bi bi-star-fill"></i>
-                                        <i class="bi bi-star"></i>
-                                        <i class="bi bi-star"></i>
-                                    </div>
-                                </td>
-                                <td>Could be more detailed</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">View</button>
-                                </td>
-                            </tr>
+                            <tr><td>2 mins ago</td><td>Admissions</td><td>Application deadline...</td><td><i class="bi bi-hand-thumbs-up-fill text-success"></i></td><td>Perfect response...</td><td><button class="btn btn-sm btn-outline-primary">View</button></td></tr>
+                            <tr><td>15 mins ago</td><td>Financial Aid</td><td>Scholarship requirements</td><td><i class="bi bi-hand-thumbs-down-fill text-danger"></i></td><td>Could be more detailed</td><td><button class="btn btn-sm btn-outline-primary">View</button></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -190,45 +96,245 @@
         </div>
     </div>
 </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
+{# Ensure Chart.js is included #}
 <script>
-    $(document).ready(function () {
+document.addEventListener("DOMContentLoaded", function() {
 
-        // Initialize Quality Trends Chart
-        const ctx = document.getElementById('qualityTrends').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                datasets: [{
-                    label: 'Response Accuracy',
-                    data: [92, 93, 94, 93, 95, 94, 96],
-                    borderColor: 'rgb(75, 192, 192)',
-                    tension: 0.4
-                }, {
-                    label: 'User Satisfaction',
-                    data: [4.3, 4.4, 4.5, 4.4, 4.6, 4.5, 4.7],
-                    borderColor: 'rgb(255, 99, 132)',
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
+    // Helper function to set error state for a card
+    function setCardError(valueElementId, subtextElementId = null, message = "Error") {
+        const valueElement = document.getElementById(valueElementId);
+        if (valueElement) {
+            valueElement.innerText = message;
+            valueElement.className = 'display-4 mb-2 text-danger'; // Use text-danger for error
+        }
+        if (subtextElementId) {
+            const subtextElement = document.getElementById(subtextElementId);
+            if (subtextElement) {
+                 subtextElement.innerHTML = `<span class="text-danger">Load failed</span>`;
+                 subtextElement.className = ""; // Reset subtext class if needed
             }
-        });
-    });
+        }
+    }
+
+    // --- 1. Response Accuracy & Improvement Rate Card ---
+    function updateResponseAccuracy() {
+        const accuracyValueElId = "responseAccuracy";
+        const accuracyChangeElId = "accuracyChange";
+        const improvementValueElId = "improvementRate";
+        const improvementSubtextElId = "improvementRateSubtext";
+
+        fetch("{% url 'get_response_accuracy' %}")
+            .then(response => {
+                 if (!response.ok) {
+                     return response.json().catch(() => {
+                         throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+                     }).then(errorData => {
+                         throw new Error(errorData.details || errorData.error || `HTTP error ${response.status}`);
+                     });
+                 }
+                 return response.json();
+             })
+            .then(data => {
+                console.log("Received data for accuracy/improvement card:", data);
+
+                // Check for valid data structure
+                if (data && typeof data.response_accuracy === 'number' && typeof data.change_percentage === 'number') {
+                    // Update Accuracy Card
+                    document.getElementById(accuracyValueElId).innerText = data.response_accuracy.toFixed(1) + "%";
+                    document.getElementById(accuracyValueElId).className = 'display-4 mb-2'; // Reset class
+                    let trendIndicator = data.change_percentage >= 0 ? "bi-arrow-up" : "bi-arrow-down";
+                    let trendColor = data.change_percentage >= 0 ? "text-success" : "text-danger";
+                    let absChange = Math.abs(Number(data.change_percentage));
+                    let changeText = isNaN(absChange) ? 'N/A' : (absChange === 0 ? '0%' : `${absChange.toFixed(1)}%`);
+                    document.getElementById(accuracyChangeElId).innerHTML = `<span class="${trendColor}"><i class="bi ${trendIndicator}"></i> ${changeText}</span> <small class="text-muted">vs last week</small>`;
+
+                    // **** FIXED: Update Improvement Rate Card ****
+                    const improvementRateElement = document.getElementById(improvementValueElId);
+                    const improvementRateSubtextElement = document.getElementById(improvementSubtextElId);
+                    if (improvementRateElement && improvementRateSubtextElement) {
+                        let impChange = Number(data.change_percentage);
+                        let impText = isNaN(impChange) ? 'N/A' : `${impChange >= 0 ? '+' : ''}${impChange.toFixed(1)}%`; // Add +/- sign
+                        improvementRateElement.innerText = impText;
+                        improvementRateElement.className = `display-4 mb-2 ${impChange >= 0 ? 'text-success' : 'text-danger'}`; // Set color
+                        improvementRateSubtextElement.innerText = "Accuracy vs last week"; // Ensure subtext is clear
+                        improvementRateSubtextElement.className = "text-muted"; // Ensure muted class
+                    }
+                    // **** END FIX ****
+
+                } else {
+                    // Handle errors for both cards if data is invalid
+                    let errorMsg = data.error || data.details || "Invalid data";
+                    console.error("Invalid or error data received for accuracy/improvement card:", errorMsg, data);
+                    setCardError(accuracyValueElId, accuracyChangeElId, 'Error');
+                    setCardError(improvementValueElId, improvementSubtextElId, 'Error');
+                }
+            })
+            .catch(error => {
+                // Handle fetch errors
+                console.error("Error fetching response accuracy:", error);
+                setCardError(accuracyValueElId, accuracyChangeElId, 'Error');
+                setCardError(improvementValueElId, improvementSubtextElId, 'Error');
+            });
+    }
+
+    // --- 2. Total Responses ---
+    function updateTotalResponses() {
+        const totalResponsesElId = "totalResponses";
+        fetch("{% url 'get_total_responses' %}")
+            .then(response => {
+                if (!response.ok) {
+                     return response.json().catch(() => {
+                         throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+                     }).then(errorData => {
+                         throw new Error(errorData.details || errorData.error || `HTTP error ${response.status}`);
+                     });
+                 }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Received data for total responses:", data);
+                 const totalElement = document.getElementById(totalResponsesElId);
+                 if (data && typeof data.total_responses === 'number') {
+                     totalElement.className = 'display-4 mb-2'; // Reset class on success
+                     if (data.total_responses >= 1000) {
+                         totalElement.innerText = (data.total_responses / 1000).toFixed(1) + 'K';
+                     } else {
+                         totalElement.innerText = data.total_responses;
+                     }
+                 } else {
+                     let errorMsg = data.error || data.details || "Invalid data";
+                     console.error("Invalid or error data received for total responses:", errorMsg, data);
+                     setCardError(totalResponsesElId, null, 'Error');
+                 }
+            })
+            .catch(error => {
+                 console.error("Error fetching total responses:", error);
+                 setCardError(totalResponsesElId, null, 'Error');
+            });
+    }
+
+     // --- 3. Common Topics ---
+     function updateCommonTopics() {
+        fetch("{% url 'get_common_topics' %}")
+            .then(response => {
+                 if (!response.ok) {
+                    console.error(`HTTP error! Status: ${response.status} ${response.statusText}`);
+                    return response.text().then(text => {
+                       throw new Error(`Network response was not ok: ${response.statusText}. Body: ${text}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                let topicContainer = document.getElementById("commonTopicsContainer");
+                topicContainer.innerHTML = ""; // Clear loading message
+                console.log("Received data for common topics:", data);
+
+                if (data && data.common_topics && data.common_topics.length > 0) {
+                    const colors = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning', 'bg-danger', 'bg-secondary'];
+                    let colorIndex = 0;
+
+                    data.common_topics.forEach(topic => {
+                        let progressBarColor = colors[colorIndex % colors.length];
+                        colorIndex++;
+                        let topicHTML = `
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>${topic.topic}</span>
+                                    <span>${topic.percentage}%</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar ${progressBarColor}" role="progressbar" style="width: ${topic.percentage}%"
+                                         aria-valuenow="${topic.percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>`;
+                        topicContainer.innerHTML += topicHTML;
+                    });
+                } else if (data && data.common_topics && data.common_topics.length === 0) {
+                     topicContainer.innerHTML = `<div class="text-center text-muted p-3">No topic data available yet.</div>`;
+                }
+                 else {
+                     console.error("Invalid or error data received for common topics:", data);
+                     let errorMsg = data && data.error ? data.error : "Invalid data";
+                     topicContainer.innerHTML = `<div class="text-center text-danger">Error: ${errorMsg}</div>`;
+                }
+            })
+            .catch(error => {
+                 console.error("Error fetching topics:", error);
+                 let topicContainer = document.getElementById("commonTopicsContainer");
+                 topicContainer.innerHTML = `<div class="text-center text-danger">Failed to load topics.</div>`;
+            });
+    }
+
+    // --- 4. Quality Trends Chart ---
+    let qualityChart = null;
+    function updateQualityTrends() {
+        const chartMessageElement = document.getElementById('chartMessage');
+        const canvasElement = document.getElementById('qualityTrends');
+        const ctx = canvasElement.getContext('2d');
+
+         // Helper to display message on canvas
+         function displayChartMessage(message, isError = false) {
+            if (qualityChart) { qualityChart.destroy(); qualityChart = null; }
+            ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            if (chartMessageElement) {
+                chartMessageElement.textContent = message;
+                chartMessageElement.className = `text-center position-absolute top-50 start-50 translate-middle ${isError ? 'text-danger' : 'text-muted'}`;
+                chartMessageElement.style.display = 'block';
+            }
+         }
+
+        fetch("{% url 'get_quality_trends' %}")
+            .then(response => { /* ... standard error checking ... */ if (!response.ok) throw new Error(`HTTP error ${response.status}`); return response.json(); })
+            .then(data => {
+                console.log("Received data for trends:", data);
+                if (data && Array.isArray(data.labels) && Array.isArray(data.accuracy_data)) {
+                    const hasRealAccuracyData = data.accuracy_data.some(point => point > 0);
+                    if (!hasRealAccuracyData) {
+                        displayChartMessage('No trend data available for the last 7 days.');
+                        return; // Stop if no data to plot
+                    }
+
+                    if (chartMessageElement) chartMessageElement.style.display = 'none'; // Hide message on success
+
+                    if (qualityChart) { qualityChart.destroy(); }
+                    qualityChart = new Chart(ctx, {
+                         type: 'line',
+                         data: {
+                             labels: data.labels,
+                             datasets: [ { label: 'Response Accuracy (%)', data: data.accuracy_data, borderColor: 'rgb(75, 192, 192)', backgroundColor: 'rgba(75, 192, 192, 0.1)', tension: 0.4, fill: true } ]
+                         },
+                         options: {
+                            responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } }, scales: { y: { beginAtZero: true, suggestedMax: 100 } }, hover: { mode: 'nearest', intersect: true }
+                        }
+                     });
+                } else {
+                    let errorMsg = data.error || data.details || "Invalid trend data received";
+                    console.error("Invalid or error data structure received for trends:", errorMsg, data);
+                    displayChartMessage(`Error: ${errorMsg}`, true);
+                }
+            })
+            .catch(error => {
+                 console.error("Error fetching quality trends:", error);
+                 displayChartMessage('Failed to load trend data.', true);
+            });
+    }
+
+    // --- Initial Data Load ---
+    updateResponseAccuracy();   // Handles Accuracy & Improvement Rate
+    updateCommonTopics();
+    updateQualityTrends();
+    updateTotalResponses();     // **** FIXED: Call initially ****
+
+    // --- Periodic Refresh ---
+    setInterval(updateResponseAccuracy, 10000); // Handles Accuracy & Improvement Rate
+    setInterval(updateCommonTopics, 10000);
+    setInterval(updateQualityTrends, 10000);
+    setInterval(updateTotalResponses, 10000); // **** FIXED: Call periodically ****
+
+}); // End DOMContentLoaded
 </script>
 {% endblock %}
