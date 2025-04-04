@@ -61,7 +61,9 @@
                     </div>
                     <div class="card-body position-relative">
                         <canvas id="qualityTrends" height="300"></canvas>
-                        <div id="chartMessage" class="text-muted text-center position-absolute top-50 start-50 translate-middle" style="display: none; z-index: 10;"></div>
+                        <div id="chartMessage"
+                            class="text-muted text-center position-absolute top-50 start-50 translate-middle"
+                            style="display: none; z-index: 10;"></div>
                     </div>
                 </div>
             </div>
@@ -72,7 +74,7 @@
                         <h5 class="card-title mb-0">Common Topics</h5>
                     </div>
                     <div class="card-body" id="commonTopicsContainer">
-                         <div class="text-center text-muted">Loading topics...</div>
+                        <div class="text-center text-muted">Loading topics...</div>
                     </div>
                 </div>
             </div>
@@ -80,19 +82,33 @@
 
         <!-- Recent Feedback Table (Static) -->
         <div class="card">
-             <div class="card-body">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Feedback</h5>
+                <div class="btn-group">
+                    <button class="btn btn-outline-secondary btn-sm active" data-filter="all">All</button>
+                    <button class="btn btn-outline-secondary btn-sm" data-filter="positive">Positive</button>
+                    <button class="btn btn-outline-secondary btn-sm" data-filter="negative">Negative</button>
+                </div>
+            </div>
+            <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table" id="feedback-table">
                         <thead>
-                            <tr><th>Time</th><th>Topic</th><th>Query</th><th>Rating</th><th>Feedback</th><th>Action</th></tr>
+                            <tr>
+                                <th>Time</th>
+                                <th>Topic</th>
+                                <th>Query</th>
+                                <th>Thumbs</th>
+                                <th>Feedback</th>
+                            </tr>
                         </thead>
-                        <tbody>
-                            <tr><td>2 mins ago</td><td>Admissions</td><td>Application deadline...</td><td><i class="bi bi-hand-thumbs-up-fill text-success"></i></td><td>Perfect response...</td><td><button class="btn btn-sm btn-outline-primary">View</button></td></tr>
-                            <tr><td>15 mins ago</td><td>Financial Aid</td><td>Scholarship requirements</td><td><i class="bi bi-hand-thumbs-down-fill text-danger"></i></td><td>Could be more detailed</td><td><button class="btn btn-sm btn-outline-primary">View</button></td></tr>
+                        <tbody id="feedback-body">
+                            <!-- Feedback rows will be injected here -->
                         </tbody>
                     </table>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
@@ -100,147 +116,211 @@
 
 {% block extra_js %}
 {# Ensure Chart.js is included #}
-<script>
-document.addEventListener("DOMContentLoaded", function() {
 
-    // Helper function to set error state for a card
-    function setCardError(valueElementId, subtextElementId = null, message = "Error") {
-        const valueElement = document.getElementById(valueElementId);
-        if (valueElement) {
-            valueElement.innerText = message;
-            valueElement.className = 'display-4 mb-2 text-danger'; // Use text-danger for error
-        }
-        if (subtextElementId) {
-            const subtextElement = document.getElementById(subtextElementId);
-            if (subtextElement) {
-                 subtextElement.innerHTML = `<span class="text-danger">Load failed</span>`;
-                 subtextElement.className = ""; // Reset subtext class if needed
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        loadFeedback('all');
+
+        document.querySelectorAll('.btn-group button').forEach(button => {
+            button.addEventListener('click', function () {
+                document.querySelectorAll('.btn-group button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                const filter = this.getAttribute('data-filter');
+                loadFeedback(filter);
+            });
+        });
+    });
+
+    function loadFeedback(filter = 'all') {
+        fetch(`/api/feedback/?filter=${filter}`)
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.querySelector('#feedback-body');
+                tbody.innerHTML = '';
+
+                const feedbackData = data.data;
+
+                feedbackData.forEach(entry => {
+                    // Optional: Add a console log to check the data during debugging
+                    // console.log('Processing entry:', entry, typeof entry.thumbs_up);
+
+                    const date = new Date(entry.time);
+                    const formattedTime = date.toLocaleDateString() + ', ' +
+                        date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                    // --- Simplified Thumbs Logic ---
+                    let thumbs = '';
+                    if (entry.thumbs_up === true) { // Or simply: if (entry.thumbs_up)
+                        thumbs = '<span class="text-success">up</span>';
+                    } else if (entry.thumbs_up === false) { // Or simply: else
+                        thumbs = '<span class="text-danger">Down</span>';
+                    }
+                    // --- End Simplified Logic ---
+
+                    const row = `
+                    <tr>
+                        <td>${formattedTime}</td>
+                        <td>${entry.topic}</td>
+                        <td>${entry.query}</td>
+                        <td>${thumbs}</td>
+                        <td>${entry.feedback || ''}</td>
+                    </tr>
+                `;
+                    tbody.insertAdjacentHTML('beforeend', row);
+                });
+            })
+            .catch(error => {
+                // Add error handling
+                console.error('Error loading feedback:', error);
+                const tbody = document.querySelector('#feedback-body');
+                tbody.innerHTML = '<tr><td colspan="6">Error loading feedback. Check console.</td></tr>';
+            });
+    }
+</script>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        // Helper function to set error state for a card
+        function setCardError(valueElementId, subtextElementId = null, message = "Error") {
+            const valueElement = document.getElementById(valueElementId);
+            if (valueElement) {
+                valueElement.innerText = message;
+                valueElement.className = 'display-4 mb-2 text-danger'; // Use text-danger for error
+            }
+            if (subtextElementId) {
+                const subtextElement = document.getElementById(subtextElementId);
+                if (subtextElement) {
+                    subtextElement.innerHTML = `<span class="text-danger">Load failed</span>`;
+                    subtextElement.className = ""; // Reset subtext class if needed
+                }
             }
         }
-    }
 
-    // --- 1. Response Accuracy & Improvement Rate Card ---
-    function updateResponseAccuracy() {
-        const accuracyValueElId = "responseAccuracy";
-        const accuracyChangeElId = "accuracyChange";
-        const improvementValueElId = "improvementRate";
-        const improvementSubtextElId = "improvementRateSubtext";
+        // --- 1. Response Accuracy & Improvement Rate Card ---
+        function updateResponseAccuracy() {
+            const accuracyValueElId = "responseAccuracy";
+            const accuracyChangeElId = "accuracyChange";
+            const improvementValueElId = "improvementRate";
+            const improvementSubtextElId = "improvementRateSubtext";
 
-        fetch("{% url 'get_response_accuracy' %}")
-            .then(response => {
-                 if (!response.ok) {
-                     return response.json().catch(() => {
-                         throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
-                     }).then(errorData => {
-                         throw new Error(errorData.details || errorData.error || `HTTP error ${response.status}`);
-                     });
-                 }
-                 return response.json();
-             })
-            .then(data => {
-                console.log("Received data for accuracy/improvement card:", data);
-
-                // Check for valid data structure
-                if (data && typeof data.response_accuracy === 'number' && typeof data.change_percentage === 'number') {
-                    // Update Accuracy Card
-                    document.getElementById(accuracyValueElId).innerText = data.response_accuracy.toFixed(1) + "%";
-                    document.getElementById(accuracyValueElId).className = 'display-4 mb-2'; // Reset class
-                    let trendIndicator = data.change_percentage >= 0 ? "bi-arrow-up" : "bi-arrow-down";
-                    let trendColor = data.change_percentage >= 0 ? "text-success" : "text-danger";
-                    let absChange = Math.abs(Number(data.change_percentage));
-                    let changeText = isNaN(absChange) ? 'N/A' : (absChange === 0 ? '0%' : `${absChange.toFixed(1)}%`);
-                    document.getElementById(accuracyChangeElId).innerHTML = `<span class="${trendColor}"><i class="bi ${trendIndicator}"></i> ${changeText}</span> <small class="text-muted">vs last week</small>`;
-
-                    // **** FIXED: Update Improvement Rate Card ****
-                    const improvementRateElement = document.getElementById(improvementValueElId);
-                    const improvementRateSubtextElement = document.getElementById(improvementSubtextElId);
-                    if (improvementRateElement && improvementRateSubtextElement) {
-                        let impChange = Number(data.change_percentage);
-                        let impText = isNaN(impChange) ? 'N/A' : `${impChange >= 0 ? '+' : ''}${impChange.toFixed(1)}%`; // Add +/- sign
-                        improvementRateElement.innerText = impText;
-                        improvementRateElement.className = `display-4 mb-2 ${impChange >= 0 ? 'text-success' : 'text-danger'}`; // Set color
-                        improvementRateSubtextElement.innerText = "Accuracy vs last week"; // Ensure subtext is clear
-                        improvementRateSubtextElement.className = "text-muted"; // Ensure muted class
+            fetch("{% url 'get_response_accuracy' %}")
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().catch(() => {
+                            throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+                        }).then(errorData => {
+                            throw new Error(errorData.details || errorData.error || `HTTP error ${response.status}`);
+                        });
                     }
-                    // **** END FIX ****
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Received data for accuracy/improvement card:", data);
 
-                } else {
-                    // Handle errors for both cards if data is invalid
-                    let errorMsg = data.error || data.details || "Invalid data";
-                    console.error("Invalid or error data received for accuracy/improvement card:", errorMsg, data);
+                    // Check for valid data structure
+                    if (data && typeof data.response_accuracy === 'number' && typeof data.change_percentage === 'number') {
+                        // Update Accuracy Card
+                        document.getElementById(accuracyValueElId).innerText = data.response_accuracy.toFixed(1) + "%";
+                        document.getElementById(accuracyValueElId).className = 'display-4 mb-2'; // Reset class
+                        let trendIndicator = data.change_percentage >= 0 ? "bi-arrow-up" : "bi-arrow-down";
+                        let trendColor = data.change_percentage >= 0 ? "text-success" : "text-danger";
+                        let absChange = Math.abs(Number(data.change_percentage));
+                        let changeText = isNaN(absChange) ? 'N/A' : (absChange === 0 ? '0%' : `${absChange.toFixed(1)}%`);
+                        document.getElementById(accuracyChangeElId).innerHTML = `<span class="${trendColor}"><i class="bi ${trendIndicator}"></i> ${changeText}</span> <small class="text-muted">vs last week</small>`;
+
+                        // **** FIXED: Update Improvement Rate Card ****
+                        const improvementRateElement = document.getElementById(improvementValueElId);
+                        const improvementRateSubtextElement = document.getElementById(improvementSubtextElId);
+                        if (improvementRateElement && improvementRateSubtextElement) {
+                            let impChange = Number(data.change_percentage);
+                            let impText = isNaN(impChange) ? 'N/A' : `${impChange >= 0 ? '+' : ''}${impChange.toFixed(1)}%`; // Add +/- sign
+                            improvementRateElement.innerText = impText;
+                            improvementRateElement.className = `display-4 mb-2 ${impChange >= 0 ? 'text-success' : 'text-danger'}`; // Set color
+                            improvementRateSubtextElement.innerText = "Accuracy vs last week"; // Ensure subtext is clear
+                            improvementRateSubtextElement.className = "text-muted"; // Ensure muted class
+                        }
+                        // **** END FIX ****
+
+                    } else {
+                        // Handle errors for both cards if data is invalid
+                        let errorMsg = data.error || data.details || "Invalid data";
+                        console.error("Invalid or error data received for accuracy/improvement card:", errorMsg, data);
+                        setCardError(accuracyValueElId, accuracyChangeElId, 'Error');
+                        setCardError(improvementValueElId, improvementSubtextElId, 'Error');
+                    }
+                })
+                .catch(error => {
+                    // Handle fetch errors
+                    console.error("Error fetching response accuracy:", error);
                     setCardError(accuracyValueElId, accuracyChangeElId, 'Error');
                     setCardError(improvementValueElId, improvementSubtextElId, 'Error');
-                }
-            })
-            .catch(error => {
-                // Handle fetch errors
-                console.error("Error fetching response accuracy:", error);
-                setCardError(accuracyValueElId, accuracyChangeElId, 'Error');
-                setCardError(improvementValueElId, improvementSubtextElId, 'Error');
-            });
-    }
+                });
+        }
 
-    // --- 2. Total Responses ---
-    function updateTotalResponses() {
-        const totalResponsesElId = "totalResponses";
-        fetch("{% url 'get_total_responses' %}")
-            .then(response => {
-                if (!response.ok) {
-                     return response.json().catch(() => {
-                         throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
-                     }).then(errorData => {
-                         throw new Error(errorData.details || errorData.error || `HTTP error ${response.status}`);
-                     });
-                 }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Received data for total responses:", data);
-                 const totalElement = document.getElementById(totalResponsesElId);
-                 if (data && typeof data.total_responses === 'number') {
-                     totalElement.className = 'display-4 mb-2'; // Reset class on success
-                     if (data.total_responses >= 1000) {
-                         totalElement.innerText = (data.total_responses / 1000).toFixed(1) + 'K';
-                     } else {
-                         totalElement.innerText = data.total_responses;
-                     }
-                 } else {
-                     let errorMsg = data.error || data.details || "Invalid data";
-                     console.error("Invalid or error data received for total responses:", errorMsg, data);
-                     setCardError(totalResponsesElId, null, 'Error');
-                 }
-            })
-            .catch(error => {
-                 console.error("Error fetching total responses:", error);
-                 setCardError(totalResponsesElId, null, 'Error');
-            });
-    }
+        // --- 2. Total Responses ---
+        function updateTotalResponses() {
+            const totalResponsesElId = "totalResponses";
+            fetch("{% url 'get_total_responses' %}")
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().catch(() => {
+                            throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+                        }).then(errorData => {
+                            throw new Error(errorData.details || errorData.error || `HTTP error ${response.status}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Received data for total responses:", data);
+                    const totalElement = document.getElementById(totalResponsesElId);
+                    if (data && typeof data.total_responses === 'number') {
+                        totalElement.className = 'display-4 mb-2'; // Reset class on success
+                        if (data.total_responses >= 1000) {
+                            totalElement.innerText = (data.total_responses / 1000).toFixed(1) + 'K';
+                        } else {
+                            totalElement.innerText = data.total_responses;
+                        }
+                    } else {
+                        let errorMsg = data.error || data.details || "Invalid data";
+                        console.error("Invalid or error data received for total responses:", errorMsg, data);
+                        setCardError(totalResponsesElId, null, 'Error');
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching total responses:", error);
+                    setCardError(totalResponsesElId, null, 'Error');
+                });
+        }
 
-     // --- 3. Common Topics ---
-     function updateCommonTopics() {
-        fetch("{% url 'get_common_topics' %}")
-            .then(response => {
-                 if (!response.ok) {
-                    console.error(`HTTP error! Status: ${response.status} ${response.statusText}`);
-                    return response.text().then(text => {
-                       throw new Error(`Network response was not ok: ${response.statusText}. Body: ${text}`);
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                let topicContainer = document.getElementById("commonTopicsContainer");
-                topicContainer.innerHTML = ""; // Clear loading message
-                console.log("Received data for common topics:", data);
+        // --- 3. Common Topics ---
+        function updateCommonTopics() {
+            fetch("{% url 'get_common_topics' %}")
+                .then(response => {
+                    if (!response.ok) {
+                        console.error(`HTTP error! Status: ${response.status} ${response.statusText}`);
+                        return response.text().then(text => {
+                            throw new Error(`Network response was not ok: ${response.statusText}. Body: ${text}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    let topicContainer = document.getElementById("commonTopicsContainer");
+                    topicContainer.innerHTML = ""; // Clear loading message
+                    console.log("Received data for common topics:", data);
 
-                if (data && data.common_topics && data.common_topics.length > 0) {
-                    const colors = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning', 'bg-danger', 'bg-secondary'];
-                    let colorIndex = 0;
+                    if (data && data.common_topics && data.common_topics.length > 0) {
+                        const colors = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning', 'bg-danger', 'bg-secondary'];
+                        let colorIndex = 0;
 
-                    data.common_topics.forEach(topic => {
-                        let progressBarColor = colors[colorIndex % colors.length];
-                        colorIndex++;
-                        let topicHTML = `
+                        data.common_topics.forEach(topic => {
+                            let progressBarColor = colors[colorIndex % colors.length];
+                            colorIndex++;
+                            let topicHTML = `
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between mb-1">
                                     <span>${topic.topic}</span>
@@ -251,90 +331,90 @@ document.addEventListener("DOMContentLoaded", function() {
                                          aria-valuenow="${topic.percentage}" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                             </div>`;
-                        topicContainer.innerHTML += topicHTML;
-                    });
-                } else if (data && data.common_topics && data.common_topics.length === 0) {
-                     topicContainer.innerHTML = `<div class="text-center text-muted p-3">No topic data available yet.</div>`;
-                }
-                 else {
-                     console.error("Invalid or error data received for common topics:", data);
-                     let errorMsg = data && data.error ? data.error : "Invalid data";
-                     topicContainer.innerHTML = `<div class="text-center text-danger">Error: ${errorMsg}</div>`;
-                }
-            })
-            .catch(error => {
-                 console.error("Error fetching topics:", error);
-                 let topicContainer = document.getElementById("commonTopicsContainer");
-                 topicContainer.innerHTML = `<div class="text-center text-danger">Failed to load topics.</div>`;
-            });
-    }
-
-    // --- 4. Quality Trends Chart ---
-    let qualityChart = null;
-    function updateQualityTrends() {
-        const chartMessageElement = document.getElementById('chartMessage');
-        const canvasElement = document.getElementById('qualityTrends');
-        const ctx = canvasElement.getContext('2d');
-
-         // Helper to display message on canvas
-         function displayChartMessage(message, isError = false) {
-            if (qualityChart) { qualityChart.destroy(); qualityChart = null; }
-            ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            if (chartMessageElement) {
-                chartMessageElement.textContent = message;
-                chartMessageElement.className = `text-center position-absolute top-50 start-50 translate-middle ${isError ? 'text-danger' : 'text-muted'}`;
-                chartMessageElement.style.display = 'block';
-            }
-         }
-
-        fetch("{% url 'get_quality_trends' %}")
-            .then(response => { /* ... standard error checking ... */ if (!response.ok) throw new Error(`HTTP error ${response.status}`); return response.json(); })
-            .then(data => {
-                console.log("Received data for trends:", data);
-                if (data && Array.isArray(data.labels) && Array.isArray(data.accuracy_data)) {
-                    const hasRealAccuracyData = data.accuracy_data.some(point => point > 0);
-                    if (!hasRealAccuracyData) {
-                        displayChartMessage('No trend data available for the last 7 days.');
-                        return; // Stop if no data to plot
+                            topicContainer.innerHTML += topicHTML;
+                        });
+                    } else if (data && data.common_topics && data.common_topics.length === 0) {
+                        topicContainer.innerHTML = `<div class="text-center text-muted p-3">No topic data available yet.</div>`;
                     }
+                    else {
+                        console.error("Invalid or error data received for common topics:", data);
+                        let errorMsg = data && data.error ? data.error : "Invalid data";
+                        topicContainer.innerHTML = `<div class="text-center text-danger">Error: ${errorMsg}</div>`;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching topics:", error);
+                    let topicContainer = document.getElementById("commonTopicsContainer");
+                    topicContainer.innerHTML = `<div class="text-center text-danger">Failed to load topics.</div>`;
+                });
+        }
 
-                    if (chartMessageElement) chartMessageElement.style.display = 'none'; // Hide message on success
+        // --- 4. Quality Trends Chart ---
+        let qualityChart = null;
+        function updateQualityTrends() {
+            const chartMessageElement = document.getElementById('chartMessage');
+            const canvasElement = document.getElementById('qualityTrends');
+            const ctx = canvasElement.getContext('2d');
 
-                    if (qualityChart) { qualityChart.destroy(); }
-                    qualityChart = new Chart(ctx, {
-                         type: 'line',
-                         data: {
-                             labels: data.labels,
-                             datasets: [ { label: 'Response Accuracy (%)', data: data.accuracy_data, borderColor: 'rgb(75, 192, 192)', backgroundColor: 'rgba(75, 192, 192, 0.1)', tension: 0.4, fill: true } ]
-                         },
-                         options: {
-                            responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } }, scales: { y: { beginAtZero: true, suggestedMax: 100 } }, hover: { mode: 'nearest', intersect: true }
-                        }
-                     });
-                } else {
-                    let errorMsg = data.error || data.details || "Invalid trend data received";
-                    console.error("Invalid or error data structure received for trends:", errorMsg, data);
-                    displayChartMessage(`Error: ${errorMsg}`, true);
+            // Helper to display message on canvas
+            function displayChartMessage(message, isError = false) {
+                if (qualityChart) { qualityChart.destroy(); qualityChart = null; }
+                ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+                if (chartMessageElement) {
+                    chartMessageElement.textContent = message;
+                    chartMessageElement.className = `text-center position-absolute top-50 start-50 translate-middle ${isError ? 'text-danger' : 'text-muted'}`;
+                    chartMessageElement.style.display = 'block';
                 }
-            })
-            .catch(error => {
-                 console.error("Error fetching quality trends:", error);
-                 displayChartMessage('Failed to load trend data.', true);
-            });
-    }
+            }
 
-    // --- Initial Data Load ---
-    updateResponseAccuracy();   // Handles Accuracy & Improvement Rate
-    updateCommonTopics();
-    updateQualityTrends();
-    updateTotalResponses();     // **** FIXED: Call initially ****
+            fetch("{% url 'get_quality_trends' %}")
+                .then(response => { /* ... standard error checking ... */ if (!response.ok) throw new Error(`HTTP error ${response.status}`); return response.json(); })
+                .then(data => {
+                    console.log("Received data for trends:", data);
+                    if (data && Array.isArray(data.labels) && Array.isArray(data.accuracy_data)) {
+                        const hasRealAccuracyData = data.accuracy_data.some(point => point > 0);
+                        if (!hasRealAccuracyData) {
+                            displayChartMessage('No trend data available for the last 7 days.');
+                            return; // Stop if no data to plot
+                        }
 
-    // --- Periodic Refresh ---
-    setInterval(updateResponseAccuracy, 10000); // Handles Accuracy & Improvement Rate
-    setInterval(updateCommonTopics, 10000);
-    setInterval(updateQualityTrends, 10000);
-    setInterval(updateTotalResponses, 10000); // **** FIXED: Call periodically ****
+                        if (chartMessageElement) chartMessageElement.style.display = 'none'; // Hide message on success
 
-}); // End DOMContentLoaded
+                        if (qualityChart) { qualityChart.destroy(); }
+                        qualityChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: data.labels,
+                                datasets: [{ label: 'Response Accuracy (%)', data: data.accuracy_data, borderColor: 'rgb(75, 192, 192)', backgroundColor: 'rgba(75, 192, 192, 0.1)', tension: 0.4, fill: true }]
+                            },
+                            options: {
+                                responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } }, scales: { y: { beginAtZero: true, suggestedMax: 100 } }, hover: { mode: 'nearest', intersect: true }
+                            }
+                        });
+                    } else {
+                        let errorMsg = data.error || data.details || "Invalid trend data received";
+                        console.error("Invalid or error data structure received for trends:", errorMsg, data);
+                        displayChartMessage(`Error: ${errorMsg}`, true);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching quality trends:", error);
+                    displayChartMessage('Failed to load trend data.', true);
+                });
+        }
+
+        // --- Initial Data Load ---
+        updateResponseAccuracy();   // Handles Accuracy & Improvement Rate
+        updateCommonTopics();
+        updateQualityTrends();
+        updateTotalResponses();     // **** FIXED: Call initially ****
+
+        // --- Periodic Refresh ---
+        setInterval(updateResponseAccuracy, 10000); // Handles Accuracy & Improvement Rate
+        setInterval(updateCommonTopics, 10000);
+        setInterval(updateQualityTrends, 10000);
+        setInterval(updateTotalResponses, 10000); // **** FIXED: Call periodically ****
+
+    }); // End DOMContentLoaded
 </script>
 {% endblock %}

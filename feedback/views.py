@@ -1,12 +1,9 @@
-# Import necessary Django and Python libraries
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 from datetime import timedelta, datetime, date # Import date
 from collections import Counter, defaultdict
 import logging
-
-# Import your model
 from .models import ChatbotFeedback
 
 # Setup logger for this view file
@@ -14,6 +11,36 @@ logger = logging.getLogger('custom_logger') # Use the name you defined
 
 def feedback(request):
     return render(request, 'feedback/feedback.html')
+
+def feedback_api(request):
+    filter_param = request.GET.get('filter', 'all')
+
+    if filter_param == 'positive':
+        feedback_entries = ChatbotFeedback.objects.filter(thumbs_up__in=[True])
+    elif filter_param == 'negative':
+        feedback_entries = ChatbotFeedback.objects.filter(thumbs_up__in=[False])
+    else:
+        feedback_entries = ChatbotFeedback.objects.all()
+
+    # Apply ordering and limit *after* filtering
+    feedback_entries = feedback_entries.order_by('-timestamp')[:20]
+
+    data = []
+    for entry in feedback_entries:
+        formatted_time = str(entry.timestamp) # Or simply convert to string if sufficient
+
+        data.append({
+            "feedback_id": entry.feedback_id,
+            "topic": entry.topic,
+            "query": entry.query,
+            "response": entry.response,
+            "thumbs_up": entry.thumbs_up,
+            "feedback": entry.feedback,
+            # "time": entry.timestamp, # Use the formatted/string version
+            "time": formatted_time
+        })
+
+    return JsonResponse({"data": data})
 
 # --- API View: Calculate Response Accuracy Card (No changes needed here) ---
 def get_response_accuracy(request):

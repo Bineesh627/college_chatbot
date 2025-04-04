@@ -7,4 +7,5 @@ urlpatterns = [
     path('api/get-common-topics/', views.get_common_topics, name='get_common_topics'),
     path('api/get-quality-trends/', views.get_quality_trends, name='get_quality_trends'),
     path('api/get-total-responses/', views.get_total_responses, name='get_total_responses'),
+    path('api/feedback/', views.feedback_api, name='feedback_api'),  # Returns JSON data
 ]
