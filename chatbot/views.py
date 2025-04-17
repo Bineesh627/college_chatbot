@@ -79,7 +79,8 @@ def qa_workflow(request):
             history = current_session.conversation_history.get('history', [])
             history.append({
                 "user": chat_input_text,
-                "bot": response_text
+                "bot": response_text,
+                "feedback": None
             })
 
             current_session.conversation_history = {'history': history}
@@ -119,40 +120,95 @@ def get_chat_history(request):
 def submit_feedback(request):
     try:
         data = json.loads(request.body)
-        session_id = request.session.session_key # Get session_id from request.session
+        session_id = request.session.session_key
         query = data.get('query')
         chatbot_response = data.get('chatbot_response')
-        feedback_type = data.get('feedback_type') # 'up' or 'down'
+        feedback_type = data.get('feedback_type') # Expecting 'up' or 'down'
 
-        # Validate feedback_type
+        # --- Input Validation ---
+        if not session_id:
+             # This case might happen if session expired or cookies are disabled client-side
+             logger.warning("Feedback submitted without a valid session ID.")
+             return JsonResponse({'status': 'error', 'message': 'Active session not found. Please refresh.'}, status=400)
+
+        if not all([query, chatbot_response, feedback_type]):
+             logger.warning(f"Feedback submission missing data for session {session_id}. Data: {data}")
+             return JsonResponse({'status': 'error', 'message': 'Missing required feedback data (query, response, or type)'}, status=400)
+
         if feedback_type not in ['up', 'down']:
-            return JsonResponse({'status': 'error', 'message': 'Invalid feedback type'}, status=400)
+            logger.warning(f"Invalid feedback type received for session {session_id}. Type: {feedback_type}")
+            return JsonResponse({'status': 'error', 'message': 'Invalid feedback type. Must be "up" or "down".'}, status=400)
 
-        # Get ChatSession instance (assuming session exists)
+        # Convert feedback_type ('up'/'down') to boolean (True/False)
+        feedback_boolean = (feedback_type == 'up')
+
+        # --- Get ChatSession ---
         try:
             chat_session = ChatSession.objects.get(session_id=session_id)
         except ChatSession.DoesNotExist:
+            logger.warning(f"Feedback submitted for non-existent session ID: {session_id}")
+            # You might decide to still save to ChatbotFeedback if session is not critical,
+            # but linking requires it. Returning error is safer.
             return JsonResponse({'status': 'error', 'message': 'Chat session not found'}, status=400)
 
-        # Create ChatFeedback instance
+        # --- MODIFICATION: Update conversation_history ---
+        history = chat_session.conversation_history.get('history', [])
+        history_updated = False
+        # Iterate through history *in reverse* to find the most recent matching message pair
+        for i in range(len(history) - 1, -1, -1):
+            item = history[i]
+            # Check if the dictionary item has 'user' and 'bot' keys, and they match the feedback data.
+            # We target the specific interaction the user provided feedback for.
+            if (item.get('user') == query and item.get('bot') == chatbot_response):
+                  # Found the matching interaction in history. Update its feedback status.
+                  # Use .get('feedback', -1) != feedback_boolean to prevent redundant updates if needed
+                  # or allow overwriting feedback by simply assigning:
+                  item['feedback'] = feedback_boolean
+                  history_updated = True
+                  logger.debug(f"Found match at index {i} in history for session {session_id}. Updating feedback to {feedback_boolean}.")
+                  break # Stop after finding and updating the most recent match
+
+        if history_updated:
+            # Assign the modified list back to the conversation_history field
+            chat_session.conversation_history['history'] = history
+            # Save the ChatSession object to persist the change in the JSON field.
+            # update_fields ensures only these fields are part of the SQL UPDATE query.
+            chat_session.save(update_fields=['conversation_history', 'last_activity'])
+            logger.info(f"Feedback ({feedback_type}) stored successfully in conversation_history for session {session_id}")
+        else:
+            # Log a warning if no matching message pair was found in the history.
+            # This could indicate a frontend issue sending incorrect query/response,
+            # or maybe the history structure differs from expectations.
+            logger.warning(
+                f"Could not find matching message pair in conversation_history for session {session_id} "
+                f"to update feedback. Query: '{query[:50]}...', Response: '{chatbot_response[:50]}...'"
+            )
+
         feedback_instance = ChatbotFeedback(
-            session=chat_session,
-            query=query,
-            response=chatbot_response,
-            thumbs_up=(feedback_type == 'up'), # Convert 'up'/'down' to Boolean for thumbs_up field
+            session=chat_session,        # Link to the ChatSession
+            query=query,                 # User's query
+            response=chatbot_response,   # Bot's response that was rated
+            thumbs_up=feedback_boolean,  # Store the boolean feedback
+            topic="General",             # Set a default topic, or modify to get topic context if available
+            # feedback=data.get('comment') # If you add a comment field in the future
         )
         feedback_instance.save()
+        logger.info(f"Feedback also saved to ChatbotFeedback table for session {session_id}. Feedback ID: {feedback_instance.feedback_id}")
+        # --- End existing logic ---
 
-        logger.info(f"Feedback received: {feedback_type} for session {session_id}")
-        return JsonResponse({'status': 'success'})
+        return JsonResponse({'status': 'success', 'message': 'Feedback received successfully.'})
 
     except json.JSONDecodeError:
-        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
-    except ChatSession.DoesNotExist: # Catch ChatSession.DoesNotExist again just in case
-        return JsonResponse({'status': 'error', 'message': 'Chat session not found'}, status=400)
+        logger.error("Invalid JSON received in feedback request body.", exc_info=True)
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data provided.'}, status=400)
+    # Catching DoesNotExist again just in case logic changes, though it's checked above.
+    except ChatSession.DoesNotExist:
+         logger.error(f"ChatSession.DoesNotExist caught unexpectedly for session {session_id} during feedback processing.")
+         return JsonResponse({'status': 'error', 'message': 'Chat session not found unexpectedly.'}, status=400)
     except Exception as e:
-        logger.error(f"Error processing feedback: {e}", exc_info=True)
-        return JsonResponse({'status': 'error', 'message': 'Error saving feedback'}, status=400)
+        # Catch any other unexpected errors during processing
+        logger.error(f"Unexpected error processing feedback for session {session_id}: {e}", exc_info=True)
+        return JsonResponse({'status': 'error', 'message': 'An internal error occurred while saving feedback.'}, status=500)
 
 @require_http_methods(["POST"])
 def process_voice(request):

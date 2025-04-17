@@ -52,6 +52,7 @@ header span {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    background-color: rgb(241 242 254);
 }
 
 .message-container {
@@ -63,8 +64,9 @@ header span {
 .chat-message {
     padding: 12px;
     border-radius: 12px;
-    max-width: 80%;
+    max-width: 90%;
     word-wrap: break-word;
+    background-color: #fff;
 }
 
 .chat-message.user {
@@ -74,7 +76,7 @@ header span {
 }
 
 .chat-message.bot {
-    background: #F3F4F6;
+    /* background: #F3F4F6; */
     color: #1F2937;
 }
 
