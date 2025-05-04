@@ -20,15 +20,7 @@
                         <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                     </svg>
                 </button>
-                <button id="chatbot-voice" type="button">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                        <line x1="12" y1="19" x2="12" y2="23"></line>
-                        <line x1="8" y1="23" x2="16" y2="23"></line>
-                    </svg>
-                </button>
+                <!-- Voice button removed -->
             </div>
         </div>
     </form>
@@ -46,31 +38,30 @@
     const chatbotWindow = document.getElementById('chatbot-window');
     const chatbotClose = document.getElementById('chatbot-close');
     const chatbotSend = document.getElementById('chatbot-send');
-    const chatbotVoice = document.getElementById('chatbot-voice');
+    // chatbotVoice variable removed
     const chatbotText = document.getElementById('chatbot-text');
     const chatbotMessages = document.getElementById('chatbot-messages');
     const chatForm = document.getElementById('chatForm');
 
     let messageCounter = 0;
-    let mediaRecorder = null;
-    let audioChunks = [];
+    // mediaRecorder and audioChunks variables removed
 
     // Get CSRF token from cookie
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
-            console.log("All cookies:", cookies); // Log all cookies to console
+            // console.log("All cookies:", cookies); // Keep console logs if desired
             for (let i = 0; i < cookies.length; i++) {
                 const cookie = cookies[i].trim();
                 if (cookie.substring(0, name.length + 1) === (name + '=')) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    console.log("CSRF Cookie Found:", name, cookieValue); // Log when CSRF cookie is found
+                    // console.log("CSRF Cookie Found:", name, cookieValue); // Keep console logs if desired
                     break;
                 }
             }
         }
-        console.log("CSRF Cookie Value Returned:", cookieValue); // Log the final returned value
+        // console.log("CSRF Cookie Value Returned:", cookieValue); // Keep console logs if desired
         return cookieValue;
     }
 
@@ -179,88 +170,61 @@
                 chatbot_response: chatbotResponseText, // Send bot's response
                 feedback_type: feedbackType
             })
+        })
+        .then(response => response.json()) // Optional: Check response status
+        .then(data => {
+            if(data.status === 'success') {
+                console.log("Feedback submitted successfully");
+            } else {
+                console.error("Feedback submission failed:", data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Error submitting feedback:", error);
         });
     }
 
-    async function initVoiceRecording() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-
-            mediaRecorder.ondataavailable = (event) => {
-                audioChunks.push(event.data);
-            };
-
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                audioChunks = [];
-
-                addMessage("🎤 Voice message sent", "user");
-
-                // Create FormData and append audio file
-                const formData = new FormData();
-                formData.append('audio', audioBlob, 'voice-message.wav');
-
-                try {
-                    const response = await fetch('/chatbot/process-voice/', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': csrftoken,
-                        },
-                        body: formData
-                    });
-
-                    const data = await response.json();
-                    addMessage(data.response, "bot");
-                } catch (error) {
-                    console.error('Error processing voice message:', error);
-                    addMessage("Sorry, I couldn't process your voice message.", "bot");
-                }
-            };
-
-        } catch (error) {
-            console.error('Error accessing microphone:', error);
-            alert('Unable to access microphone. Please check your browser permissions.');
-        }
-    }
-
-    chatbotVoice.addEventListener('click', () => {
-        if (!mediaRecorder) {
-            initVoiceRecording();
-            return;
-        }
-
-        if (mediaRecorder.state === 'inactive') {
-            audioChunks = [];
-            mediaRecorder.start();
-            chatbotVoice.classList.add('recording');
-        } else {
-            mediaRecorder.stop();
-            chatbotVoice.classList.remove('recording');
-        }
-    });
+    // initVoiceRecording function removed
+    // Event listener for chatbotVoice removed
 
     chatbotToggle.addEventListener('click', async () => {
         chatbotWindow.classList.add('show');
         chatbotToggle.style.display = 'none';
 
+        // Only fetch history if messages div is empty
         if (chatbotMessages.children.length === 0) {
             try {
                 const response = await fetch('/chatbot/history/');
+                if (!response.ok) {
+                   throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
 
+                // Clear any potential placeholder messages before adding history
+                chatbotMessages.innerHTML = '';
+
                 if (data.history && data.history.length > 0) {
-                    data.history.forEach(msg => {
-                        addMessage(msg.user, 'user', false);
-                        addMessage(msg.bot, 'bot', msg === data.history[data.history.length - 1]);
+                    data.history.forEach((msg, index) => {
+                        // Only show feedback icons on the very last bot message of the history
+                        const isLastBotMessage = (index === data.history.length - 1);
+                        if (msg.user) addMessage(msg.user, 'user', false); // Never show feedback icons on user messages
+                        if (msg.bot) addMessage(msg.bot, 'bot', isLastBotMessage);
                     });
+                     // Ensure scroll to bottom after loading history
+                    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
                 } else {
                     addMessage("Hello! How can I help you today?", "bot");
                 }
             } catch (error) {
                 console.error('Error fetching chat history:', error);
+                 // Clear any potential placeholder messages before adding error message
+                chatbotMessages.innerHTML = '';
+                // Add a default greeting even if history fails
                 addMessage("Hello! How can I help you today?", "bot");
             }
+        } else {
+             // If messages exist, just ensure scroll to bottom
+             chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
         }
     });
 
@@ -269,57 +233,89 @@
         chatbotToggle.style.display = 'flex';
     });
 
-    async function sendMessage(e) {
-        if (e) {
-            e.preventDefault();
+    async function sendMessage(event) { // Added event parameter
+        if (event) { // Check if event exists
+            event.preventDefault(); // Prevent default form submission
         }
 
         const text = chatbotText.value.trim();
         if (text === "") return;
 
-        addMessage(text, "user");
-        chatbotText.value = "";
+        // Add user message immediately
+        addMessage(text, "user", false); // User messages don't get feedback icons immediately
+        const userMessageText = text; // Store text before clearing input
+        chatbotText.value = ""; // Clear input field
 
+        // Add loading indicator
         const loadingDiv = document.createElement('div');
-        loadingDiv.classList.add('chat-message', 'bot', 'loading');
-        loadingDiv.textContent = "Thinking";
+        loadingDiv.classList.add('message-container'); // Use container for structure
+        const loadingMsg = document.createElement('div');
+        loadingMsg.classList.add('chat-message', 'bot', 'loading');
+        loadingMsg.textContent = "Thinking..."; // Or use a spinner icon
+        loadingDiv.appendChild(loadingMsg)
         chatbotMessages.appendChild(loadingDiv);
+        chatbotMessages.scrollTop = chatbotMessages.scrollHeight; // Scroll down
 
         try {
             const response = await fetch('/chatbot/qa/', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/x-www-form-urlencoded', // Correct header for form data
                     'X-CSRFToken': csrftoken,
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest' // Often needed for Django AJAX detection
                 },
-                body: `chat_input_text=${encodeURIComponent(text)}`
+                body: `chat_input_text=${encodeURIComponent(userMessageText)}` // Use stored text
             });
 
-            const data = await response.json();
+            // Remove loading indicator before adding response
             chatbotMessages.removeChild(loadingDiv);
-            addMessage(data.response, "bot");
 
-            // If you want to show search results
+            if (!response.ok) {
+                 // Handle HTTP errors (like 404, 500)
+                 console.error(`HTTP error! status: ${response.status}`);
+                 let errorMsg = "I'm sorry, but there was an error processing your request.";
+                 try {
+                     const errorData = await response.json();
+                     errorMsg = errorData.error || errorData.message || errorMsg;
+                 } catch (jsonError) {
+                     // Ignore if response body is not JSON
+                 }
+                 addMessage(errorMsg, "bot"); // Add error message as bot response
+                 return; // Stop further processing
+            }
+
+            const data = await response.json();
+            // Add the actual bot response
+            addMessage(data.response, "bot", true); // Show feedback icons for new bot response
+
+            // Optional: Log search results if present
             if (data.search_results) {
                 console.log('Search Results:', data.search_results);
             }
+
         } catch (error) {
             console.error('Error sending message:', error);
-            chatbotMessages.removeChild(loadingDiv);
-            addMessage("I'm sorry, but there was an error processing your request.", "bot");
+            // Ensure loading indicator is removed even if fetch fails
+            if (chatbotMessages.contains(loadingDiv)) {
+                chatbotMessages.removeChild(loadingDiv);
+            }
+            // Add error message as bot response
+            addMessage("I'm sorry, but there was a network error or server issue.", "bot");
+        } finally {
+             // Ensure scroll to bottom after message exchange
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
         }
     }
 
-    chatForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        sendMessage();
-    });
+    // Use submit event on the form for Enter key and button click
+    chatForm.addEventListener('submit', sendMessage);
 
-    chatbotText.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
+    // Remove keypress listener as form submission handles Enter key
+    // chatbotText.addEventListener('keypress', (e) => {
+    //     if (e.key === 'Enter' && !e.shiftKey) { // Allow Shift+Enter for new lines if needed
+    //         e.preventDefault();
+    //         sendMessage(e); // Pass event
+    //     }
+    // });
+
 </script>

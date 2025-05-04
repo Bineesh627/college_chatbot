@@ -210,22 +210,6 @@ def submit_feedback(request):
         logger.error(f"Unexpected error processing feedback for session {session_id}: {e}", exc_info=True)
         return JsonResponse({'status': 'error', 'message': 'An internal error occurred while saving feedback.'}, status=500)
 
-@require_http_methods(["POST"])
-def process_voice(request):
-    try:
-        audio_file = request.FILES.get('audio')
-        if not audio_file:
-            return JsonResponse({'error': 'No audio file received'}, status=400)
-
-        # Here you would implement voice processing logic
-        # For now, we'll return a simple response
-        return JsonResponse({
-            'response': "I've received your voice message, but voice processing is not implemented yet."
-        })
-    except Exception as e:
-        logger.error(f"Error processing voice message: {e}", exc_info=True)
-        return JsonResponse({'error': 'Error processing voice message'}, status=500)
-
 def query_rag(query_text):
     # Generate embedding for the query
     query_embedding_vector = generate_embeddings(query_text)

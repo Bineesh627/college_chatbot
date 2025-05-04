@@ -10,7 +10,7 @@ class ChatSession(models.Model):
         return self.session_id #changed to self.session_id
 
     class Meta:
-        db_table = 'chatbot_chatsession'
+        db_table = 'chat_history'
         indexes = [
             models.Index(fields=['session_id']),
         ]

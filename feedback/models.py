@@ -15,9 +15,8 @@ class ChatbotFeedback(models.Model):
         return f"{self.topic} - {self.query[:50]}"
 
     class Meta:
-        db_table = 'chatbot_chatfeedback'
+        db_table = 'chat_feedback'
         indexes = [
-            models.Index(fields=['session']),
             models.Index(fields=['timestamp']),
             models.Index(fields=['topic']),
         ]

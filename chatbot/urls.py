@@ -7,5 +7,4 @@ urlpatterns = [
     path('chatbot/qa/', views.qa_workflow, name='qa'),
     path('chatbot/history/', views.get_chat_history, name='history'),
     path('chatbot/feedback/', views.submit_feedback, name='feedback'),
-    path('chatbot/process-voice/', views.process_voice, name='process_voice'),
 ]
