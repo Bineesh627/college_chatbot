@@ -20,7 +20,6 @@
                         <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                     </svg>
                 </button>
-                <!-- Voice button removed -->
             </div>
         </div>
     </form>
@@ -33,35 +32,32 @@
     </svg>
 </button>
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
 <script>
     const chatbotToggle = document.getElementById('chatbot-toggle');
     const chatbotWindow = document.getElementById('chatbot-window');
     const chatbotClose = document.getElementById('chatbot-close');
     const chatbotSend = document.getElementById('chatbot-send');
-    // chatbotVoice variable removed
     const chatbotText = document.getElementById('chatbot-text');
     const chatbotMessages = document.getElementById('chatbot-messages');
     const chatForm = document.getElementById('chatForm');
 
     let messageCounter = 0;
-    // mediaRecorder and audioChunks variables removed
 
     // Get CSRF token from cookie
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
-            // console.log("All cookies:", cookies); // Keep console logs if desired
             for (let i = 0; i < cookies.length; i++) {
                 const cookie = cookies[i].trim();
                 if (cookie.substring(0, name.length + 1) === (name + '=')) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    // console.log("CSRF Cookie Found:", name, cookieValue); // Keep console logs if desired
                     break;
                 }
             }
         }
-        // console.log("CSRF Cookie Value Returned:", cookieValue); // Keep console logs if desired
         return cookieValue;
     }
 
@@ -86,13 +82,50 @@
         }
     }
 
+    function submitNeutralFeedback(messageContainer) {
+        const msgDiv = messageContainer.querySelector('.chat-message.bot');
+        const chatbotResponseText = msgDiv.textContent;
+        
+        const userMessageContainer = messageContainer.previousElementSibling;
+        const userMsgDiv = userMessageContainer.querySelector('.chat-message.user');
+        const userQueryText = userMsgDiv.textContent;
+
+        // Send neutral feedback to Django backend
+        fetch('/chatbot/feedback/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                query: userQueryText,
+                chatbot_response: chatbotResponseText,
+                feedback_type: 'neutral'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === 'success') {
+                console.log("Neutral feedback recorded");
+            } else {
+                console.error("Neutral feedback recording failed:", data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Error recording neutral feedback:", error);
+        });
+    }
+
     function addMessage(text, sender, showFeedback = true) {
         const messageContainer = document.createElement('div');
         messageContainer.classList.add('message-container');
-
+        messageContainer.dataset.timestamp = new Date().toISOString();
+        
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('chat-message', sender);
-        msgDiv.textContent = text;
+        // **CHANGE START:** Render Markdown using marked
+        msgDiv.innerHTML = sender === 'bot' ? marked.parse(text) : text;
+        // **CHANGE END**
         messageContainer.appendChild(msgDiv);
 
         if (sender === 'bot' && showFeedback) {
@@ -100,25 +133,30 @@
             const feedbackDiv = document.createElement('div');
             feedbackDiv.classList.add('feedback-icons');
             feedbackDiv.innerHTML = `
-            <span class="feedback-icon thumbs-up" onclick="submitFeedback(this, 'up', ${messageCounter})">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M7 10v12"></path>
-                    <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"></path>
-                </svg>
-            </span>
-            <span class="feedback-icon thumbs-down" onclick="submitFeedback(this, 'down', ${messageCounter})">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 14V2"></path>
-                    <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22h0a3.13 3.13 0 0 1-3-3.88Z"></path>
-                </svg>
-            </span>
-        `;
+                <span class="feedback-icon thumbs-up" onclick="submitFeedback(this, 'up', ${messageCounter})">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 10v12"></path>
+                        <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"></path>
+                    </svg>
+                </span>
+                <span class="feedback-icon thumbs-down" onclick="submitFeedback(this, 'down', ${messageCounter})">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 14V2"></path>
+                        <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22h0a3.13 3.13 0 0 1-3-3.88Z"></path>
+                    </svg>
+                </span>
+            `;
             messageContainer.appendChild(feedbackDiv);
 
             const feedbackSuccess = document.createElement('div');
             feedbackSuccess.classList.add('feedback-success');
             feedbackSuccess.textContent = 'Thank you for your feedback!';
             messageContainer.appendChild(feedbackSuccess);
+
+            // Automatically submit neutral feedback when message is first displayed
+            setTimeout(() => {
+                submitNeutralFeedback(messageContainer);
+            }, 1000);
         }
 
         chatbotMessages.appendChild(messageContainer);
@@ -129,16 +167,14 @@
         }
     }
 
-
     function submitFeedback(icon, feedbackType, messageId) {
         const messageContainer = icon.closest('.message-container');
-        const msgDiv = messageContainer.querySelector('.chat-message.bot'); // Get the bot message div
-        const chatbotResponseText = msgDiv.textContent; // Extract bot's response text
+        const msgDiv = messageContainer.querySelector('.chat-message.bot');
+        const chatbotResponseText = msgDiv.textContent;
 
-        const userMessageContainer = messageContainer.previousElementSibling; // Get the user's message container (previous sibling)
-        const userMsgDiv = userMessageContainer.querySelector('.chat-message.user'); // Get the user message div
-        const userQueryText = userMsgDiv.textContent; // Extract user's query text
-
+        const userMessageContainer = messageContainer.previousElementSibling;
+        const userMsgDiv = userMessageContainer.querySelector('.chat-message.user');
+        const userQueryText = userMsgDiv.textContent;
 
         const feedbackIcons = messageContainer.querySelector('.feedback-icons');
         const feedbackSuccess = messageContainer.querySelector('.feedback-success');
@@ -166,12 +202,12 @@
                 'X-CSRFToken': csrftoken,
             },
             body: JSON.stringify({
-                query: userQueryText,            // Send user's query
-                chatbot_response: chatbotResponseText, // Send bot's response
+                query: userQueryText,
+                chatbot_response: chatbotResponseText,
                 feedback_type: feedbackType
             })
         })
-        .then(response => response.json()) // Optional: Check response status
+        .then(response => response.json())
         .then(data => {
             if(data.status === 'success') {
                 console.log("Feedback submitted successfully");
@@ -184,14 +220,10 @@
         });
     }
 
-    // initVoiceRecording function removed
-    // Event listener for chatbotVoice removed
-
     chatbotToggle.addEventListener('click', async () => {
         chatbotWindow.classList.add('show');
         chatbotToggle.style.display = 'none';
 
-        // Only fetch history if messages div is empty
         if (chatbotMessages.children.length === 0) {
             try {
                 const response = await fetch('/chatbot/history/');
@@ -200,30 +232,24 @@
                 }
                 const data = await response.json();
 
-                // Clear any potential placeholder messages before adding history
                 chatbotMessages.innerHTML = '';
 
                 if (data.history && data.history.length > 0) {
                     data.history.forEach((msg, index) => {
-                        // Only show feedback icons on the very last bot message of the history
                         const isLastBotMessage = (index === data.history.length - 1);
-                        if (msg.user) addMessage(msg.user, 'user', false); // Never show feedback icons on user messages
+                        if (msg.user) addMessage(msg.user, 'user', false);
                         if (msg.bot) addMessage(msg.bot, 'bot', isLastBotMessage);
                     });
-                     // Ensure scroll to bottom after loading history
                     chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
                 } else {
                     addMessage("Hello! How can I help you today?", "bot");
                 }
             } catch (error) {
                 console.error('Error fetching chat history:', error);
-                 // Clear any potential placeholder messages before adding error message
                 chatbotMessages.innerHTML = '';
-                // Add a default greeting even if history fails
                 addMessage("Hello! How can I help you today?", "bot");
             }
         } else {
-             // If messages exist, just ensure scroll to bottom
              chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
         }
     });
@@ -233,89 +259,68 @@
         chatbotToggle.style.display = 'flex';
     });
 
-    async function sendMessage(event) { // Added event parameter
-        if (event) { // Check if event exists
-            event.preventDefault(); // Prevent default form submission
+    async function sendMessage(event) {
+        if (event) {
+            event.preventDefault();
         }
 
         const text = chatbotText.value.trim();
         if (text === "") return;
 
-        // Add user message immediately
-        addMessage(text, "user", false); // User messages don't get feedback icons immediately
-        const userMessageText = text; // Store text before clearing input
-        chatbotText.value = ""; // Clear input field
+        addMessage(text, "user", false);
+        const userMessageText = text;
+        chatbotText.value = "";
 
-        // Add loading indicator
         const loadingDiv = document.createElement('div');
-        loadingDiv.classList.add('message-container'); // Use container for structure
+        loadingDiv.classList.add('message-container');
         const loadingMsg = document.createElement('div');
         loadingMsg.classList.add('chat-message', 'bot', 'loading');
-        loadingMsg.textContent = "Thinking..."; // Or use a spinner icon
+        loadingMsg.textContent = "Thinking...";
         loadingDiv.appendChild(loadingMsg)
         chatbotMessages.appendChild(loadingDiv);
-        chatbotMessages.scrollTop = chatbotMessages.scrollHeight; // Scroll down
+        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
 
         try {
             const response = await fetch('/chatbot/qa/', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded', // Correct header for form data
+                    'Content-Type': 'application/x-www-form-urlencoded',
                     'X-CSRFToken': csrftoken,
-                    'X-Requested-With': 'XMLHttpRequest' // Often needed for Django AJAX detection
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: `chat_input_text=${encodeURIComponent(userMessageText)}` // Use stored text
+                body: `chat_input_text=${encodeURIComponent(userMessageText)}`
             });
 
-            // Remove loading indicator before adding response
             chatbotMessages.removeChild(loadingDiv);
 
             if (!response.ok) {
-                 // Handle HTTP errors (like 404, 500)
                  console.error(`HTTP error! status: ${response.status}`);
                  let errorMsg = "I'm sorry, but there was an error processing your request.";
                  try {
                      const errorData = await response.json();
                      errorMsg = errorData.error || errorData.message || errorMsg;
-                 } catch (jsonError) {
-                     // Ignore if response body is not JSON
-                 }
-                 addMessage(errorMsg, "bot"); // Add error message as bot response
-                 return; // Stop further processing
+                 } catch (jsonError) {}
+                 addMessage(errorMsg, "bot");
+                 return;
             }
 
             const data = await response.json();
-            // Add the actual bot response
-            addMessage(data.response, "bot", true); // Show feedback icons for new bot response
+            addMessage(data.response, "bot", true);
 
-            // Optional: Log search results if present
             if (data.search_results) {
                 console.log('Search Results:', data.search_results);
             }
 
         } catch (error) {
             console.error('Error sending message:', error);
-            // Ensure loading indicator is removed even if fetch fails
             if (chatbotMessages.contains(loadingDiv)) {
                 chatbotMessages.removeChild(loadingDiv);
             }
-            // Add error message as bot response
             addMessage("I'm sorry, but there was a network error or server issue.", "bot");
         } finally {
-             // Ensure scroll to bottom after message exchange
             chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
         }
     }
 
-    // Use submit event on the form for Enter key and button click
     chatForm.addEventListener('submit', sendMessage);
-
-    // Remove keypress listener as form submission handles Enter key
-    // chatbotText.addEventListener('keypress', (e) => {
-    //     if (e.key === 'Enter' && !e.shiftKey) { // Allow Shift+Enter for new lines if needed
-    //         e.preventDefault();
-    //         sendMessage(e); // Pass event
-    //     }
-    // });
-
 </script>

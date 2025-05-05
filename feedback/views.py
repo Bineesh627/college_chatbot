@@ -36,8 +36,8 @@ def feedback_api(request):
             "response": entry.response,
             "thumbs_up": entry.thumbs_up,
             "feedback": entry.feedback,
-            # "time": entry.timestamp, # Use the formatted/string version
-            "timestamp": formatted_time
+            "time": entry.timestamp, # Use the formatted/string version
+            # "timestamp": formatted_time
         })
 
     return JsonResponse({"data": data})

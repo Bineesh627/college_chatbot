@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
 from django.views.decorators.http import require_http_methods
 import json
+from django.utils import timezone
 import numpy as np
 from prompt_management.models import SystemPrompt
 from langchain.prompts import ChatPromptTemplate
@@ -16,6 +17,143 @@ import logging
 
 logger = logging.getLogger('custom_logger')
 
+from typing import Dict, List
+import re
+
+COLLEGE_TOPIC_MAP = {
+    'admissions': {
+        'keywords': ['admission', 'apply', 'deadline', 'requirement', 'eligibility', 'application fee'],
+        'subtopics': ['undergraduate', 'postgraduate', 'international', 'transfer', 'documents']
+    },
+    'courses': {
+        'keywords': ['course', 'subject', 'curriculum', 'syllabus', 'elective', 'credit', 'module'],
+        'subtopics': ['computer_science', 'engineering', 'business', 'humanities', 'sciences']
+    },
+    'facilities': {
+        'keywords': ['library', 'hostel', 'lab', 'sports', 'cafeteria', 'transport', 'wifi'],
+        'subtopics': []
+    },
+    'exams': {
+        'keywords': ['exam', 'test', 'midterm', 'final', 'schedule', 'pattern', 'marks'],
+        'subtopics': ['entrance', 'semester', 'practical', 'theory']
+    },
+    'fees': {
+        'keywords': ['fee', 'payment', 'scholarship', 'loan', 'installment', 'refund'],
+        'subtopics': ['tuition', 'hostel', 'mess', 'library']
+    },
+    'placements': {
+        'keywords': ['placement', 'internship', 'recruitment', 'package', 'company', 'career'],
+        'subtopics': []
+    }
+}
+
+def analyze_college_topic(user_query: str) -> Dict:
+    """
+    Analyze college-related queries and return structured topic information
+    Returns: {
+        'main_topic': str,
+        'subtopic': str,
+        'category': str,
+        'confidence': float,
+        'course_code': str or None
+    }
+    """
+    # Detect course codes first (e.g., "CS101", "MATH202")
+    course_code = detect_course_code(user_query)
+    
+    # Structured prompt for LLaMA 3
+    prompt = f"""<|begin_of_text|>
+    <|start_header_id|>system<|end_header_id|>
+    You are a college information specialist. Analyze this query and identify:
+    1. Main topic category (Only: {', '.join(COLLEGE_TOPIC_MAP.keys())})
+    2. Specific subtopic if present
+    3. Academic department if mentioned
+    
+    Return JSON format: {{"topic": "", "subtopic": "", "department": ""}}
+    <|eot_id|>
+    <|start_header_id|>user<|end_header_id|>
+    Query: {user_query}<|eot_id|>
+    <|start_header_id|>assistant<|end_header_id|>
+    """
+    
+    try:
+        # Get LLM response
+        llm_response = invoke_llama3(prompt)
+        
+        # Clean and parse response
+        json_str = extract_json(llm_response)
+        result = json.loads(json_str)
+        
+        # Validate and normalize
+        validated = validate_topic(result, user_query)
+        validated['course_code'] = course_code
+        
+        return {
+            'main_topic': validated.get('topic', 'general'),
+            'subtopic': validated.get('subtopic', ''),
+            'category': validated.get('department', ''),
+            'confidence': 0.9,  # Can implement confidence scoring
+            'course_code': course_code
+        }
+        
+    except Exception as e:
+        return fallback_topic_analysis(user_query, course_code)
+
+
+def detect_course_code(text: str) -> str:
+    """Find course codes like CS101 or MATH202"""
+    matches = re.findall(r'\b([A-Z]{2,4}\s?\d{3})\b', text.upper())
+    return matches[0] if matches else None
+
+def validate_topic(result: Dict, query: str) -> Dict:
+    """Validate and sanitize LLM output"""
+    # Ensure main topic is valid
+    if result['topic'].lower() not in COLLEGE_TOPIC_MAP:
+        result['topic'] = 'general'
+    
+    # Check subtopic validity
+    valid_subtopics = COLLEGE_TOPIC_MAP.get(result['topic'], {}).get('subtopics', [])
+    if result['subtopic'] and result['subtopic'].lower() not in valid_subtopics:
+        result['subtopic'] = ''
+        
+    # Department normalization
+    result['department'] = normalize_department(result.get('department', ''))
+    
+    return result
+
+def normalize_department(dept: str) -> str:
+    """Standardize department names"""
+    dept = dept.lower().replace(' ', '_')
+    return {
+        'cs': 'computer_science',
+        'cse': 'computer_science',
+        'mech': 'mechanical_engineering',
+        'eee': 'electrical_engineering',
+        'mba': 'business_administration'
+    }.get(dept, dept)
+
+def fallback_topic_analysis(query: str, course_code: str) -> Dict:
+    """Fallback analysis using keyword matching"""
+    query_lower = query.lower()
+    
+    for topic, data in COLLEGE_TOPIC_MAP.items():
+        if any(kw in query_lower for kw in data['keywords']):
+            return {
+                'main_topic': topic,
+                'subtopic': '',
+                'category': 'general',
+                'confidence': 0.7,
+                'course_code': course_code
+            }
+    
+    return {
+        'main_topic': 'general',
+        'subtopic': '',
+        'category': '',
+        'confidence': 0.5,
+        'course_code': course_code
+    }
+
 def prompt_temp(context, question):
     # Use __in lookup for boolean filtering
     prompt_obj = SystemPrompt.objects.filter(is_active__in=[True]).first()
@@ -24,6 +162,11 @@ def prompt_temp(context, question):
 
     PROMPT_TEMPLATE = (
         f"{prompt_obj.prompt_text}\n\n"
+        "Instructions:\n"
+        "1. Provide concise, accurate answers\n"
+        "2. Never repeat the same information\n"
+        "3. End after providing complete information\n"
+        "4. If listing items, use bullet points\n"
         "Context:\n"
         f"{context}\n\n"
         "Question:\n"
@@ -123,92 +266,81 @@ def submit_feedback(request):
         session_id = request.session.session_key
         query = data.get('query')
         chatbot_response = data.get('chatbot_response')
-        feedback_type = data.get('feedback_type') # Expecting 'up' or 'down'
+        feedback_type = data.get('feedback_type', 'neutral')  # Default to neutral
 
-        # --- Input Validation ---
+        # Input validation
         if not session_id:
-             # This case might happen if session expired or cookies are disabled client-side
-             logger.warning("Feedback submitted without a valid session ID.")
-             return JsonResponse({'status': 'error', 'message': 'Active session not found. Please refresh.'}, status=400)
+            return JsonResponse({'status': 'error', 'message': 'Active session not found.'}, status=400)
+        if not all([query, chatbot_response]):
+            return JsonResponse({'status': 'error', 'message': 'Missing required data'}, status=400)
+        if feedback_type not in ['up', 'down', 'neutral']:
+            return JsonResponse({'status': 'error', 'message': 'Invalid feedback type'}, status=400)
 
-        if not all([query, chatbot_response, feedback_type]):
-             logger.warning(f"Feedback submission missing data for session {session_id}. Data: {data}")
-             return JsonResponse({'status': 'error', 'message': 'Missing required feedback data (query, response, or type)'}, status=400)
+        # Convert feedback type to boolean or None
+        feedback_boolean = {
+            'up': True,
+            'down': False,
+            'neutral': None
+        }[feedback_type]
 
-        if feedback_type not in ['up', 'down']:
-            logger.warning(f"Invalid feedback type received for session {session_id}. Type: {feedback_type}")
-            return JsonResponse({'status': 'error', 'message': 'Invalid feedback type. Must be "up" or "down".'}, status=400)
+        topic_data = analyze_college_topic(query)
+        main_topic = topic_data.get('main_topic', 'general')
 
-        # Convert feedback_type ('up'/'down') to boolean (True/False)
-        feedback_boolean = (feedback_type == 'up')
-
-        # --- Get ChatSession ---
         try:
             chat_session = ChatSession.objects.get(session_id=session_id)
         except ChatSession.DoesNotExist:
-            logger.warning(f"Feedback submitted for non-existent session ID: {session_id}")
-            # You might decide to still save to ChatbotFeedback if session is not critical,
-            # but linking requires it. Returning error is safer.
-            return JsonResponse({'status': 'error', 'message': 'Chat session not found'}, status=400)
-
-        # --- MODIFICATION: Update conversation_history ---
-        history = chat_session.conversation_history.get('history', [])
-        history_updated = False
-        # Iterate through history *in reverse* to find the most recent matching message pair
-        for i in range(len(history) - 1, -1, -1):
-            item = history[i]
-            # Check if the dictionary item has 'user' and 'bot' keys, and they match the feedback data.
-            # We target the specific interaction the user provided feedback for.
-            if (item.get('user') == query and item.get('bot') == chatbot_response):
-                  # Found the matching interaction in history. Update its feedback status.
-                  # Use .get('feedback', -1) != feedback_boolean to prevent redundant updates if needed
-                  # or allow overwriting feedback by simply assigning:
-                  item['feedback'] = feedback_boolean
-                  history_updated = True
-                  logger.debug(f"Found match at index {i} in history for session {session_id}. Updating feedback to {feedback_boolean}.")
-                  break # Stop after finding and updating the most recent match
-
-        if history_updated:
-            # Assign the modified list back to the conversation_history field
-            chat_session.conversation_history['history'] = history
-            # Save the ChatSession object to persist the change in the JSON field.
-            # update_fields ensures only these fields are part of the SQL UPDATE query.
-            chat_session.save(update_fields=['conversation_history', 'last_activity'])
-            logger.info(f"Feedback ({feedback_type}) stored successfully in conversation_history for session {session_id}")
-        else:
-            # Log a warning if no matching message pair was found in the history.
-            # This could indicate a frontend issue sending incorrect query/response,
-            # or maybe the history structure differs from expectations.
-            logger.warning(
-                f"Could not find matching message pair in conversation_history for session {session_id} "
-                f"to update feedback. Query: '{query[:50]}...', Response: '{chatbot_response[:50]}...'"
+            chat_session = ChatSession.objects.create(
+                session_id=session_id,
+                conversation_history={'history': []}
             )
 
-        feedback_instance = ChatbotFeedback(
-            session=chat_session,        # Link to the ChatSession
-            query=query,                 # User's query
-            response=chatbot_response,   # Bot's response that was rated
-            thumbs_up=feedback_boolean,  # Store the boolean feedback
-            topic="General",             # Set a default topic, or modify to get topic context if available
-            # feedback=data.get('comment') # If you add a comment field in the future
+        # Initialize conversation_history if null
+        if not chat_session.conversation_history:
+            chat_session.conversation_history = {'history': []}
+
+        history = chat_session.conversation_history.get('history', [])
+        history_updated = False
+
+        # Search for matching interaction
+        for i in reversed(range(len(history))):
+            item = history[i]
+            if item.get('user') == query and item.get('bot') == chatbot_response:
+                item['feedback'] = feedback_boolean
+                history_updated = True
+                break
+
+        if history_updated:
+            chat_session.conversation_history['history'] = history
+            chat_session.save(update_fields=['conversation_history', 'last_activity'])
+        else:
+            new_entry = {
+                'user': query,
+                'bot': chatbot_response,
+                'feedback': feedback_boolean,
+                'timestamp': str(timezone.now()),
+                'topic': main_topic,  # Store topic in conversation history
+            }
+            chat_session.conversation_history['history'].append(new_entry)
+            chat_session.save(update_fields=['conversation_history', 'last_activity'])
+
+        # Always save feedback regardless of history state
+        feedback_instance, created = ChatbotFeedback.objects.update_or_create(
+            session=chat_session,
+            query=query,
+            response=chatbot_response,
+            defaults={
+                'thumbs_up': feedback_boolean,
+                'topic': main_topic,  # Store topic in feedback
+            }
         )
-        feedback_instance.save()
-        logger.info(f"Feedback also saved to ChatbotFeedback table for session {session_id}. Feedback ID: {feedback_instance.feedback_id}")
-        # --- End existing logic ---
 
         return JsonResponse({'status': 'success', 'message': 'Feedback received successfully.'})
 
     except json.JSONDecodeError:
-        logger.error("Invalid JSON received in feedback request body.", exc_info=True)
-        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data provided.'}, status=400)
-    # Catching DoesNotExist again just in case logic changes, though it's checked above.
-    except ChatSession.DoesNotExist:
-         logger.error(f"ChatSession.DoesNotExist caught unexpectedly for session {session_id} during feedback processing.")
-         return JsonResponse({'status': 'error', 'message': 'Chat session not found unexpectedly.'}, status=400)
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
     except Exception as e:
-        # Catch any other unexpected errors during processing
-        logger.error(f"Unexpected error processing feedback for session {session_id}: {e}", exc_info=True)
-        return JsonResponse({'status': 'error', 'message': 'An internal error occurred while saving feedback.'}, status=500)
+        logger.error(f"Error in submit_feedback: {str(e)}")
+        return JsonResponse({'status': 'error', 'message': 'Internal server error'}, status=500)
 
 def query_rag(query_text):
     # Generate embedding for the query

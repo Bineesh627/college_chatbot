@@ -155,6 +155,8 @@
                         thumbs = '<span class="text-success">up</span>';
                     } else if (entry.thumbs_up === false) { // Or simply: else
                         thumbs = '<span class="text-danger">Down</span>';
+                    } else if (entry.thumbs_up === null) { // Or simply: else
+                        thumbs = '<span class="text-warning">neutral</span>';
                     }
                     // --- End Simplified Logic ---
 
